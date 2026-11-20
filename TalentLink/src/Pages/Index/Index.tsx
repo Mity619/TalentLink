@@ -1,59 +1,55 @@
-import {
-  IonButton,
-  IonContent,
-  IonHeader,
-  IonMenuButton,
-  IonPage,
-  IonTitle,
-  IonToolbar,
-} from "@ionic/react";
+import { IonContent, IonPage, IonIcon } from "@ionic/react";
 import { useHistory } from "react-router-dom";
+import { personOutline, chatbubbleOutline, briefcaseOutline, shieldCheckmarkOutline } from "ionicons/icons";
 import { useAuth } from "../../Hooks/useAuth";
-import type { Rol } from "../../Helpers/validators";
+import { roleLabel } from "../../Helpers/validators";
 import styles from "./Index.module.scss";
 
-export const roleLabel: Record<Rol, string> = {
-  student: "Estudiante",
-  recruiter: "Reclutador",
-  admin: "Administrador",
-};
-
 const Index = () => {
-  const { profile } = useAuth();
+  const { profile, logout } = useAuth(); // <-- Agregamos logout
   const history = useHistory();
 
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonMenuButton slot="start" />
-          <IonTitle>Inicio</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent className="ion-padding">
-        <div className={styles.hero}>
-          <h1>Hola, {profile?.nombre?.split(" ")[0] || "bienvenido"}</h1>
-          <p>
-            Sesión iniciada como <strong>{profile ? roleLabel[profile.rol] : "Usuario"}</strong>.
-          </p>
+      <IonContent fullscreen>
+        <div className={styles.headerArea}>
+          <div className={styles.topRow}>
+            <span className={styles.badge}>{profile ? roleLabel[profile.rol] : "Usuario"}</span>
+            <span className={styles.logout} onClick={logout}>Salir</span> {/* <-- Botón funcional */}
+          </div>
+          
+          <div className={styles.greeting}>
+            <div className={styles.avatar}>{profile?.nombre?.charAt(0) || "U"}</div>
+            <div>
+              <p>Hola,</p>
+              <h1>{profile?.nombre?.split(" ")[0]}</h1>
+            </div>
+          </div>
         </div>
 
-        <div className={styles.cards}>
-          <div className={styles.card}>
-            <h3>Mi perfil</h3>
-            <p>Foto, nombre y habilidades.</p>
-            <IonButton size="small" onClick={() => history.push("/app/profile")}>
-              Abrir
-            </IonButton>
+        <div className={styles.cardsGrid}>
+          <div className={styles.card} onClick={() => history.push("/app/profile")}>
+            <IonIcon icon={personOutline} className={styles.icon} />
+            <h3>Mi Perfil</h3>
+            <p>Foto y habilidades</p>
+          </div>
+          
+          <div className={styles.card} onClick={() => history.push("/app/chats")}>
+            <IonIcon icon={chatbubbleOutline} className={styles.icon} />
+            <h3>Mis Chats</h3>
+            <p>Conversaciones</p>
+          </div>
+
+          <div className={styles.card} onClick={() => history.push("/app/jobs")}>
+            <IonIcon icon={briefcaseOutline} className={styles.icon} />
+            <h3>Vacantes</h3>
+            <p>Explora ofertas</p>
           </div>
 
           {profile?.rol === "admin" && (
-            <div className={styles.card}>
-              <h3>Usuarios</h3>
-              <p>Bloquear, cambiar rol o eliminar.</p>
-              <IonButton size="small" onClick={() => history.push("/app/admin/users")}>
-                Administrar
-              </IonButton>
+            <div className={`${styles.card} ${styles.adminCard}`} onClick={() => history.push("/admin/users")}>
+              <IonIcon icon={shieldCheckmarkOutline} className={styles.adminIcon} />
+              <h3>Panel de Administración</h3>
             </div>
           )}
         </div>
@@ -61,5 +57,4 @@ const Index = () => {
     </IonPage>
   );
 };
-
 export default Index;

@@ -13,6 +13,7 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  IonSpinner
 } from "@ionic/react";
 import { Link, useHistory } from "react-router-dom";
 import { useAuth } from "../../Hooks/useAuth";
@@ -61,85 +62,62 @@ const Register = () => {
     }
   };
 
+// En Register.tsx, cambia el return por este:
   return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonTitle>Crear cuenta</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent className="ion-padding">
-        <div className={styles.wrapper}>
-          <IonNote>Estudiantes y reclutadores pueden registrarse.</IonNote>
-          {firebaseError && (
-            <IonText color="danger">
-              <p>{firebaseError}</p>
-            </IonText>
-          )}
-
-          <form onSubmit={onSubmit}>
-            <IonItem>
-              <IonLabel position="stacked">Nombre completo</IonLabel>
-              <IonInput
-                value={form.nombre}
-                onIonInput={(e) => setField("nombre")(e.detail.value ?? "")}
-              />
-            </IonItem>
-            {errors.nombre && <IonText color="danger"><p>{errors.nombre}</p></IonText>}
-
-            <IonItem>
-              <IonLabel position="stacked">Correo</IonLabel>
-              <IonInput
-                type="email"
-                value={form.email}
-                onIonInput={(e) => setField("email")(e.detail.value ?? "")}
-              />
-            </IonItem>
-            {errors.email && <IonText color="danger"><p>{errors.email}</p></IonText>}
-
-            <IonItem>
-              <IonLabel position="stacked">Contraseña</IonLabel>
-              <IonInput
-                type="password"
-                value={form.password}
-                onIonInput={(e) => setField("password")(e.detail.value ?? "")}
-              />
-            </IonItem>
-            {errors.password && <IonText color="danger"><p>{errors.password}</p></IonText>}
-
-            <IonItem>
-              <IonLabel position="stacked">Confirmar contraseña</IonLabel>
-              <IonInput
-                type="password"
-                value={form.confirm}
-                onIonInput={(e) => setField("confirm")(e.detail.value ?? "")}
-              />
-            </IonItem>
-            {errors.confirm && <IonText color="danger"><p>{errors.confirm}</p></IonText>}
-
-            <IonItem>
-              <IonLabel>Rol</IonLabel>
-              <IonSelect
-                value={form.rol}
-                onIonChange={(e) =>
-                  setForm((f) => ({ ...f, rol: e.detail.value as "student" | "recruiter" }))
-                }
-              >
-                <IonSelectOption value="student">Estudiante</IonSelectOption>
-                <IonSelectOption value="recruiter">Reclutador</IonSelectOption>
-              </IonSelect>
-            </IonItem>
-            {errors.rol && <IonText color="danger"><p>{errors.rol}</p></IonText>}
-
-            <IonButton expand="block" type="submit" disabled={busy} className="ion-margin-top">
-              Registrarme
-            </IonButton>
-          </form>
-
-          <p className={styles.link}>
-            ¿Ya tienes cuenta? <Link to="/login">Inicia sesión</Link>
-          </p>
+      <IonContent fullscreen style={{ '--background': '#fcf9f2' }}>
+      <div className={styles.header}>
+        <div className={styles.topLogo}>
+          <div className={styles.logoCircle}>T</div>
+          <h2>TalentLink</h2>
         </div>
+        <h1>Crea tu cuenta</h1>
+        <p>Empieza a conectar talento y oportunidades</p>
+      </div>
+
+      <div className={styles.formCard} style={{ marginTop: '-30px' }}>
+        {firebaseError && (
+          <IonText color="danger"><p>{firebaseError}</p></IonText>
+        )}
+
+        <form onSubmit={onSubmit}>
+          <label className={styles.label}>Nombre completo</label>
+          <IonInput className="custom-input" value={form.nombre} onIonInput={(e) => setField("nombre")(e.detail.value ?? "")} />
+          {errors.nombre && <IonText color="danger"><p>{errors.nombre}</p></IonText>}
+
+          <label className={styles.label}>Correo</label>
+          <IonInput className="custom-input" type="email" value={form.email} onIonInput={(e) => setField("email")(e.detail.value ?? "")} />
+          {errors.email && <IonText color="danger"><p>{errors.email}</p></IonText>}
+
+          <label className={styles.label}>Contraseña</label>
+          <IonInput className="custom-input" type="password" value={form.password} onIonInput={(e) => setField("password")(e.detail.value ?? "")} />
+          {errors.password && <IonText color="danger"><p>{errors.password}</p></IonText>}
+
+          <label className={styles.label}>Confirmar contraseña</label>
+          <IonInput className="custom-input" type="password" value={form.confirm} onIonInput={(e) => setField("confirm")(e.detail.value ?? "")} />
+          {errors.confirm && <IonText color="danger"><p>{errors.confirm}</p></IonText>}
+
+          <label className={styles.label}>Soy</label>
+          <div className="custom-input" style={{ padding: '8px 16px', marginBottom: '24px' }}>
+            <IonSelect 
+              value={form.rol} 
+              interface="popover"
+              onIonChange={(e) => setForm((f) => ({ ...f, rol: e.detail.value as "student" | "recruiter" }))}
+            >
+              <IonSelectOption value="student">Estudiante / Egresado</IonSelectOption>
+              <IonSelectOption value="recruiter">Reclutador</IonSelectOption>
+            </IonSelect>
+          </div>
+
+          <IonButton expand="block" type="submit" disabled={busy} className={styles.submitBtn}>
+            {busy ? <IonSpinner name="dots" /> : "Registrarme"}
+          </IonButton>
+        </form>
+
+        <p className={styles.link}>
+          ¿Ya tienes cuenta? <Link to="/login">Entrar</Link>
+        </p>
+      </div>
       </IonContent>
     </IonPage>
   );

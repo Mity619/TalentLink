@@ -1,26 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  IonButton,
-  IonContent,
-  IonHeader,
-  IonItem,
-  IonLabel,
-  IonList,
-  IonMenuButton,
-  IonPage,
-  IonSearchbar,
-  IonSelect,
-  IonSelectOption,
-  IonText,
-  IonTitle,
-  IonToggle,
-  IonToolbar,
-} from "@ionic/react";
+import { 
+  IonSegment, IonSegmentButton, IonLabel, IonToolbar, IonHeader, 
+  IonContent, IonPage, IonSearchbar, IonIcon, IonToggle, IonSelect, IonSelectOption
+} from '@ionic/react';
+import { arrowBackOutline, trashOutline, shieldCheckmarkOutline, briefcaseOutline, documentTextOutline } from 'ionicons/icons';
 import { collection, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
+import { useHistory } from "react-router-dom"; // Para la flecha
 import { db } from "../../Helpers/firebase";
 import { useAuth } from "../../Hooks/useAuth";
 import { roleLabel, type Rol } from "../../Helpers/validators";
 import type { UserProfile } from "../../Context/AuthContext";
+import styles from "./AdminUsers.module.scss";
 
 interface AdminUser extends UserProfile {
   id: string;
@@ -28,9 +18,11 @@ interface AdminUser extends UserProfile {
 
 const AdminUsers = () => {
   const { user } = useAuth();
+  const history = useHistory();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [query, setQuery] = useState("");
   const [msg, setMsg] = useState("");
+  const [segment, setSegment] = useState<string>("users");
 
   const load = useCallback(async () => {
     const snap = await getDocs(collection(db, "users"));
@@ -65,9 +57,7 @@ const AdminUsers = () => {
     if (!window.confirm(`¿Eliminar el perfil de ${u.nombre}?`)) return;
     await deleteDoc(doc(db, "users", u.id));
     await load();
-    setMsg(
-      "Perfil eliminado. La cuenta de Auth requiere Cloud Function para borrarse por completo."
-    );
+    setMsg("Perfil eliminado.");
   };
 
   const filtered = users.filter(
@@ -77,58 +67,107 @@ const AdminUsers = () => {
   );
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonMenuButton slot="start" />
-          <IonTitle>Admin · Usuarios</IonTitle>
+    <IonPage className={styles.adminPage}>
+      <IonHeader className="ion-no-border">
+        <IonToolbar className={styles.topToolbar}>
+          <div className={styles.headerTitle} onClick={() => history.push('/app/index')}>
+            <IonIcon icon={arrowBackOutline} className={styles.backIcon} />
+            <h1>Administración</h1>
+          </div>
         </IonToolbar>
-        <IonToolbar>
-          <IonSearchbar
-            value={query}
-            onIonInput={(e) => setQuery(e.detail.value ?? "")}
-            placeholder="Buscar por nombre o correo"
+        
+        <IonToolbar className={styles.segmentToolbar}>
+          <div className={styles.segmentContainer}>
+            <IonSegment value={segment} onIonChange={(e) => setSegment(e.detail.value as string)} mode="ios" className={styles.customSegment}>
+              <IonSegmentButton value="users">
+                <IonLabel>Usuarios</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="jobs">
+                <IonLabel>Vacantes</IonLabel>
+              </IonSegmentButton>
+              <IonSegmentButton value="reports">
+                <IonLabel>Reportes</IonLabel>
+              </IonSegmentButton>
+            </IonSegment>
+          </div>
+        </IonToolbar>
+      
+        <IonToolbar className={styles.searchToolbar}>
+          <IonSearchbar 
+            className={styles.customSearch}
+            placeholder="Buscar por nombre o correo" 
+            value={query} 
+            onIonInput={(e) => setQuery(e.detail.value ?? "")} 
           />
         </IonToolbar>
       </IonHeader>
-      <IonContent>
-        {msg && (
-          <IonText color="medium">
-            <p className="ion-padding-horizontal">{msg}</p>
-          </IonText>
+      
+      <IonContent className={styles.content}>
+        {msg && <p className={styles.msg}>{msg}</p>}
+
+        {segment === "users" && (
+          <div className={styles.list}>
+            {filtered.map((u) => (
+              <div key={u.id} className={styles.userCard}>
+                <div className={styles.userInfo}>
+                  <div className={styles.avatar}>{u.nombre.charAt(0)}</div>
+                  <div>
+                    <h3>{u.nombre} {u.id === user?.uid && <span className={styles.you}>(tú)</span>}</h3>
+                    <p>{u.email}</p>
+                  </div>
+                </div>
+                
+                <div className={styles.userActions}>
+                  <IonSelect 
+                    value={u.rol} 
+                    interface="popover" 
+                    onIonChange={(e) => changeRole(u, e.detail.value as Rol)}
+                    className={styles.roleSelect}
+                  >
+                    <IonSelectOption value="student">Estudiante</IonSelectOption>
+                    <IonSelectOption value="recruiter">Reclutador</IonSelectOption>
+                    <IonSelectOption value="admin">Administrador</IonSelectOption>
+                  </IonSelect>
+
+                  <div className={styles.toggleWrapper}>
+                    <span>Activo</span>
+                    <IonToggle 
+                      checked={u.activo !== false} 
+                      onIonChange={() => toggleActivo(u)}
+                      mode="ios"
+                      className={styles.customToggle}
+                    />
+                  </div>
+
+                  <IonIcon 
+                    icon={trashOutline} 
+                    className={styles.trashIcon} 
+                    onClick={() => removeUser(u)} 
+                  />
+                </div>
+              </div>
+            ))}
+            {filtered.length === 0 && (
+              <div className={styles.emptyState}>
+                <p>No hay usuarios con estos filtros</p>
+              </div>
+            )}
+          </div>
         )}
-        <IonList>
-          {filtered.map((u) => (
-            <IonItem key={u.id}>
-              <IonLabel>
-                <h2>{u.nombre}</h2>
-                <p>{u.email}</p>
-                <IonSelect
-                  value={u.rol}
-                  interface="popover"
-                  onIonChange={(e) => changeRole(u, e.detail.value as Rol)}
-                >
-                  <IonSelectOption value="student">Estudiante</IonSelectOption>
-                  <IonSelectOption value="recruiter">Reclutador</IonSelectOption>
-                  <IonSelectOption value="admin">Administrador</IonSelectOption>
-                </IonSelect>
-              </IonLabel>
-              <IonToggle
-                slot="end"
-                checked={u.activo !== false}
-                onIonChange={() => toggleActivo(u)}
-              />
-              <IonButton slot="end" color="danger" fill="clear" onClick={() => removeUser(u)}>
-                Eliminar
-              </IonButton>
-            </IonItem>
-          ))}
-          {!filtered.length && (
-            <IonItem lines="none">
-              <IonLabel>Sin resultados.</IonLabel>
-            </IonItem>
-          )}
-        </IonList>
+
+        {segment === "jobs" && (
+          <div className={styles.emptyState}>
+            <IonIcon icon={briefcaseOutline} className={styles.emptyIcon} />
+            <p>No hay vacantes registradas</p>
+          </div>
+        )}
+
+        {segment === "reports" && (
+          <div className={styles.emptyState}>
+            <IonIcon icon={documentTextOutline} className={styles.emptyIcon} />
+            <p>No hay reportes</p>
+          </div>
+        )}
       </IonContent>
     </IonPage>
   );
