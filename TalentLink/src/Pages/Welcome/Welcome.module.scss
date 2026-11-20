@@ -1,0 +1,78 @@
+/* Reemplaza todo el archivo con esto */
+.welcomeContent {
+  /* Forzamos el degradado directamente */
+  --background: linear-gradient(135deg, #004d40 0%, #00796b 100%) !important; 
+  color: white;
+  --padding-top: 40px;
+  --padding-bottom: 40px;
+  --padding-start: 24px;
+  --padding-end: 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.topLogo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 60px;
+  h2 { margin: 0; font-size: 20px; font-weight: bold; color: white; }
+}
+
+.logoCircle {
+  background: #f47b61;
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+.heroText {
+  margin-bottom: 40px;
+  h1 { font-size: 36px; font-weight: 800; line-height: 1.1; margin-bottom: 16px; color: white; }
+  p { font-size: 16px; opacity: 0.9; line-height: 1.5; color: #d8f0e8; }
+}
+
+.features {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: auto;
+}
+
+.featureItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+  color: white;
+  ion-icon { font-size: 24px; }
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 40px;
+}
+
+.btnPrimary {
+  --border-radius: 24px;
+  --background: #f47b61;
+  height: 56px;
+  font-weight: bold;
+}
+
+.btnSecondary {
+  --border-radius: 24px;
+  --border-color: transparent;
+  --color: #004d40;
+  --background: #d8f0e8;
+  height: 56px;
+  font-weight: bold;
+}

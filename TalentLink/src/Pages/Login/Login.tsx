@@ -58,52 +58,32 @@ const Login = () => {
     }
   };
 
-  return (
+    return (
     <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonTitle>TalentLink</IonTitle>
-        </IonToolbar>
-      </IonHeader>
-      <IonContent className="ion-padding">
-        <div className={styles.wrapper}>
-          <h2>Iniciar sesión</h2>
-          <IonNote>Conecta talento con oportunidades.</IonNote>
+      <IonContent fullscreen className="teal-gradient-bg">
+        <div className={styles.header}>
+          <div className={styles.topLogo}>
+            <div className={styles.logoCircle}>T</div>
+            <h2>TalentLink</h2>
+          </div>
+          <h1>Bienvenido de vuelta</h1>
+          <p>Entra para ver tus oportunidades</p>
+        </div>
 
-          {(error || authMessage) && (
-            <IonText color="danger">
-              <p>{error || authMessage}</p>
-            </IonText>
-          )}
-
+        <div className={styles.formCard}>
           <form onSubmit={onSubmit}>
-            <IonItem>
-              <IonLabel position="stacked">Correo</IonLabel>
-              <IonInput
-                type="email"
-                value={email}
-                onIonInput={(e) => setEmail(e.detail.value ?? "")}
-                required
-              />
-            </IonItem>
-            <IonItem>
-              <IonLabel position="stacked">Contraseña</IonLabel>
-              <IonInput
-                type="password"
-                value={password}
-                onIonInput={(e) => setPassword(e.detail.value ?? "")}
-                required
-              />
-            </IonItem>
-            <IonItem lines="none">
-              <IonLabel>Recordar correo</IonLabel>
-              <IonToggle
-                checked={remember}
-                onIonChange={(e) => setRemember(Boolean(e.detail.checked))}
-              />
-            </IonItem>
+            <label className={styles.label}>Correo</label>
+            <IonInput className="custom-input" type="email" value={email} onIonInput={(e) => setEmail(e.detail.value ?? "")} required />
+            
+            <label className={styles.label}>Contraseña</label>
+            <IonInput className="custom-input" type="password" value={password} onIonInput={(e) => setPassword(e.detail.value ?? "")} required />
 
-            <IonButton expand="block" type="submit" disabled={busy}>
+            <div className={styles.toggleRow}>
+              <span>Recordar correo</span>
+              <IonToggle checked={remember} onIonChange={(e) => setRemember(Boolean(e.detail.checked))} />
+            </div>
+
+            <IonButton expand="block" type="submit" className={styles.submitBtn} disabled={busy}>
               {busy ? <IonSpinner name="dots" /> : "Entrar"}
             </IonButton>
           </form>

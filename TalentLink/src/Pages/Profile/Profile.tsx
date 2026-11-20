@@ -1,22 +1,13 @@
 import { useEffect, useState, type FormEvent } from "react";
 import {
-  IonAvatar,
-  IonButton,
-  IonContent,
-  IonHeader,
-  IonInput,
-  IonItem,
-  IonLabel,
-  IonMenuButton,
-  IonPage,
-  IonSpinner,
-  IonText,
-  IonTitle,
-  IonToolbar,
+  IonAvatar, IonButton, IonContent, IonHeader, IonInput, IonPage, 
+  IonSpinner, IonText, IonTitle, IonToolbar, IonIcon
 } from "@ionic/react";
+import { cameraOutline } from "ionicons/icons";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { doc, updateDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { Capacitor } from "@capacitor/core"; // Para el fallback en web
 import { db, storage } from "../../Helpers/firebase";
 import { useAuth } from "../../Hooks/useAuth";
 import { parseSkills, roleLabel, validateProfile } from "../../Helpers/validators";
@@ -61,9 +52,41 @@ const Profile = () => {
     }
   };
 
+  const uploadFile = async (fileOrBlob: Blob) => {
+    if (!user) return;
+    setUploading(true);
+    setMsg("");
+    try {
+      const storageRef = ref(storage, `profiles/${user.uid}.jpg`);
+      await uploadBytes(storageRef, fileOrBlob, { contentType: 'image/jpeg' });
+      const url = await getDownloadURL(storageRef);
+      await updateDoc(doc(db, "users", user.uid), { fotoURL: url });
+      await refreshProfile();
+      setMsg("Foto actualizada.");
+    } catch (error) {
+      console.error(error);
+      setMsg("No se pudo subir la foto.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const onPickPhoto = async () => {
     if (!user) return;
     setMsg("");
+
+    if (Capacitor.getPlatform() === 'web') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (e: any) => {
+        const file = e.target.files?.[0];
+        if (file) await uploadFile(file);
+      };
+      input.click();
+      return;
+    }
+
     try {
       const photo = await Camera.getPhoto({
         quality: 80,
@@ -71,81 +94,64 @@ const Profile = () => {
         resultType: CameraResultType.Uri,
         source: CameraSource.Prompt,
       });
-
       if (!photo.webPath) throw new Error("Sin webPath");
-
-      setUploading(true);
       const blob = await (await fetch(photo.webPath)).blob();
-      const storageRef = ref(storage, `profiles/${user.uid}.jpg`);
-      await uploadBytes(storageRef, blob, { contentType: blob.type || "image/jpeg" });
-      const url = await getDownloadURL(storageRef);
-      await updateDoc(doc(db, "users", user.uid), { fotoURL: url });
-      await refreshProfile();
-      setMsg("Foto actualizada.");
+      await uploadFile(blob);
     } catch (err) {
       const message = err instanceof Error ? err.message : "";
       if (message !== "User cancelled photos app") {
-        setMsg("No se pudo subir la foto. Revisa permisos de cámara.");
+        setMsg("No se pudo acceder a la cámara.");
       }
-    } finally {
-      setUploading(false);
     }
   };
 
   return (
-    <IonPage>
-      <IonHeader>
-        <IonToolbar color="primary">
-          <IonMenuButton slot="start" />
-          <IonTitle>Mi perfil</IonTitle>
+    <IonPage className={styles.profilePage}>
+      <IonHeader className="ion-no-border">
+        <IonToolbar className={styles.toolbar}>
+          <IonTitle className={styles.title}>Mi Perfil</IonTitle>
         </IonToolbar>
       </IonHeader>
-      <IonContent className="ion-padding">
-        <div className={styles.header}>
-          <IonAvatar className={styles.avatar}>
-            <img
-              src={profile?.fotoURL || "https://ionicframework.com/docs/img/demos/avatar.svg"}
-              alt="avatar"
-            />
-          </IonAvatar>
-          <IonButton size="small" onClick={onPickPhoto} disabled={uploading}>
-            {uploading ? <IonSpinner name="dots" /> : "Cambiar foto"}
+      
+      <IonContent className={styles.content}>
+        <div className={styles.avatarSection}>
+          <div className={styles.avatarWrapper}>
+            {profile?.fotoURL ? (
+              <img src={profile.fotoURL} alt="avatar" className={styles.avatarImg} />
+            ) : (
+              <div className={styles.avatarPlaceholder}>{profile?.nombre?.charAt(0)}</div>
+            )}
+          </div>
+          
+          <div className={styles.badge}>
+            {profile ? roleLabel[profile.rol] : "Usuario"}
+          </div>
+
+          <IonButton fill="outline" className={styles.photoBtn} onClick={onPickPhoto} disabled={uploading}>
+            {uploading ? <IonSpinner name="dots" /> : <><IonIcon icon={cameraOutline} slot="start" /> Cambiar foto</>}
           </IonButton>
-          <IonText color="medium">
-            <p>{profile ? roleLabel[profile.rol] : "Usuario"}</p>
-          </IonText>
         </div>
 
         {msg && (
-          <IonText color={msg.startsWith("No se pudo") ? "danger" : "success"}>
-            <p>{msg}</p>
+          <IonText color={msg.includes("No se pudo") ? "danger" : "success"}>
+            <p style={{ textAlign: 'center' }}>{msg}</p>
           </IonText>
         )}
 
-        <form onSubmit={onSave}>
-          <IonItem>
-            <IonLabel position="stacked">Nombre</IonLabel>
-            <IonInput value={nombre} onIonInput={(e) => setNombre(e.detail.value ?? "")} />
-          </IonItem>
+        <form onSubmit={onSave} className={styles.form}>
+          <label className={styles.label}>Nombre</label>
+          <IonInput className="custom-input" value={nombre} onIonInput={(e) => setNombre(e.detail.value ?? "")} />
           {errors.nombre && <IonText color="danger"><p>{errors.nombre}</p></IonText>}
 
-          <IonItem>
-            <IonLabel position="stacked">Correo (no editable)</IonLabel>
-            <IonInput value={profile?.email || ""} readonly />
-          </IonItem>
+          <label className={styles.label}>Correo</label>
+          <IonInput className="custom-input" value={profile?.email || ""} readonly style={{ opacity: 0.7 }} />
 
-          <IonItem>
-            <IonLabel position="stacked">Habilidades (separadas por coma)</IonLabel>
-            <IonInput
-              value={habilidades}
-              placeholder="React, Firebase, SQL"
-              onIonInput={(e) => setHabilidades(e.detail.value ?? "")}
-            />
-          </IonItem>
+          <label className={styles.label}>Habilidades (separadas por coma)</label>
+          <IonInput className="custom-input" value={habilidades} placeholder="React, Excel, Inglés B2" onIonInput={(e) => setHabilidades(e.detail.value ?? "")} />
           {errors.habilidades && <IonText color="danger"><p>{errors.habilidades}</p></IonText>}
 
-          <IonButton expand="block" type="submit" disabled={busy} className="ion-margin-top">
-            Guardar cambios
+          <IonButton expand="block" type="submit" className={styles.saveBtn} disabled={busy}>
+            {busy ? <IonSpinner name="dots" /> : "Guardar"}
           </IonButton>
         </form>
       </IonContent>
