@@ -6,6 +6,7 @@ import {
   getDocsFromServer,
   query,
   where,
+  getDocFromServer,
 } from "firebase/firestore";
 
 import { Preferences } from "@capacitor/preferences";
@@ -17,7 +18,6 @@ import {
   getSavedJobsStorageKey,
   type SavedJob,
 } from "./savedJobs";
-import { getJobById } from "./jobService";
 import type { Job } from "./jobs";
 
 const savedJobsCollection = collection(db, "savedJobs");
@@ -151,7 +151,20 @@ export const getSavedJobDetails = async (
   }
 
   const results = await Promise.all(
-    uniqueIds.map((jobId) => getJobById(jobId))
+    uniqueIds.map(async (jobId): Promise<Job | null> => {
+      const snapshot = await getDocFromServer(
+        doc(db, "jobs", jobId)
+      );
+
+      if (!snapshot.exists()) {
+        return null;
+      }
+
+      return {
+        ...snapshot.data(),
+        id: snapshot.id,
+      } as Job;
+    })
   );
 
   return results

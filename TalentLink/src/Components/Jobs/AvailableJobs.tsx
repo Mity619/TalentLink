@@ -421,6 +421,22 @@ const hasMoreVisible = onlySaved
     ? filteredJobs.length > nearbyVisibleCount
     : hasMore;
 
+const unavailableSavedIds =
+  onlySaved &&
+  savedJobsReady &&
+  !isLoadingJobs &&
+  !jobsError &&
+  !savedJobsError &&
+  loadedSavedKey === savedDetailsKey
+    ? savedJobIds.filter(
+        (id) =>
+          !savedJobDetails.some(
+            (job) => job.id === id
+          )
+      )
+    : [];
+
+
 const handleRefreshJobs = () => {
   if (onlySaved) {
     setSavedDetailsRefresh(
@@ -915,16 +931,38 @@ const handleToggleSavedJob = async (jobId: string) => {
           </div>
       )}
 
-      {onlySaved &&
-        !isLoadingJobs &&
-        !jobsError &&
-        !savedJobsError &&
-        savedJobsReady &&
-        savedJobIds.length > visibleJobs.length && (
-          <p className={styles.unavailableSavedJobs}>
-            Algunas vacantes guardadas ya no están
-            disponibles.
+      {unavailableSavedIds.length > 0 && (
+        <div className={styles.unavailableSavedJobs}>
+          <p>
+            {unavailableSavedIds.length === 1
+              ? "Una vacante guardada ya no está disponible."
+              : `${unavailableSavedIds.length} vacantes guardadas ya no están disponibles.`}
           </p>
+
+          {unavailableSavedIds.map((jobId, index) => (
+            <IonButton
+              key={jobId}
+              fill="outline"
+              size="small"
+              expand="block"
+              className={styles.removeUnavailableBtn}
+              disabled={
+                !savedJobsReady ||
+                loadingSavedJobs ||
+                isSaving(jobId)
+              }
+              onClick={() => {
+                if (isSaved(jobId)) {
+                  void handleToggleSavedJob(jobId);
+                }
+              }}
+            >
+              {isSaving(jobId)
+                ? "Quitando..."
+                : `Quitar referencia ${index + 1}`}
+            </IonButton>
+          ))}
+        </div>
       )}
 
       <div className={styles.jobsList}>
