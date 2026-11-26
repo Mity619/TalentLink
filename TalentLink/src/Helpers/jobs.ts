@@ -12,8 +12,8 @@ export interface JobInput {
   area: string;
   modalidad: Modalidad;
   ciudad: string;
-  lat: number;
-  lng: number;
+  lat: number | null;
+  lng: number | null;
 }
 
 export interface Job extends JobInput {

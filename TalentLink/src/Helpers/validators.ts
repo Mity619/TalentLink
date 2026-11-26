@@ -70,11 +70,28 @@ export const validateJob = (
   if (!data.ciudad.trim())
     errors.ciudad = "Ingresa la ciudad.";
 
-  if (!Number.isFinite(data.lat) || data.lat < -90 || data.lat > 90)
-    errors.lat = "Ingresa una latitud válida.";
+  const requiresLocation = data.modalidad !== "remoto";
+  const hasLocation = data.lat !== null || data.lng !== null;
 
-  if (!Number.isFinite(data.lng) || data.lng < -180 || data.lng > 180)
-    errors.lng = "Ingresa una longitud válida.";
+  if (requiresLocation || hasLocation) {
+    if (
+      data.lat === null ||
+      !Number.isFinite(data.lat) ||
+      data.lat < -90 ||
+      data.lat > 90
+    ) {
+      errors.lat = "Ingresa una latitud válida.";
+    }
+
+    if (
+      data.lng === null ||
+      !Number.isFinite(data.lng) ||
+      data.lng < -180 ||
+      data.lng > 180
+    ) {
+      errors.lng = "Ingresa una longitud válida.";
+    }
+  }
 
   return errors;
 };
