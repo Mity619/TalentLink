@@ -158,3 +158,39 @@
     margin: 0;
   }
 }
+
+.listToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+
+  span {
+    color: #666;
+    font-size: 13px;
+  }
+}
+
+.refreshBtn {
+  --color: #005a4f;
+  font-size: 12px;
+  text-transform: none;
+}
+
+.loadMoreBtn {
+  --color: #005a4f;
+  --border-color: #005a4f;
+  --border-radius: 24px;
+  height: 48px;
+  font-weight: 600;
+  margin-top: 20px;
+}
+
+.endMessage {
+  color: #666;
+  font-size: 13px;
+  text-align: center;
+  margin: 24px 0 8px;
+}
+

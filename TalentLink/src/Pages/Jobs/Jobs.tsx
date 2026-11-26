@@ -31,6 +31,7 @@ import {
 } from "../../Helpers/jobs";
 
 import JobForm from "../../Components/Jobs/JobForm";
+import AvailableJobs from "../../Components/Jobs/AvailableJobs";
 import styles from "./Jobs.module.scss";
 
 const Jobs = () => {
@@ -244,14 +245,10 @@ const Jobs = () => {
               </>
             )
           ) : (
-            <div className={styles.empty}>
-              <IonIcon icon={briefcaseOutline} />
-              <h3>Ofertas laborales</h3>
-              <p>Próximamente podrás explorar las vacantes.</p>
-            </div>
+            <AvailableJobs />
           )}
         </div>
-
+        
         <IonAlert
           isOpen={jobToDelete !== null}
           header="Eliminar vacante"
