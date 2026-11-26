@@ -42,3 +42,27 @@ export const formatDistance = (
 
   return `${distance.toFixed(1)} km`;
 };
+
+// Validar una latitud geográfica.
+export const isValidLatitude = (
+  lat: number | null
+): lat is number => {
+  return (
+    lat !== null &&
+    Number.isFinite(lat) &&
+    lat >= -90 &&
+    lat <= 90
+  );
+};
+
+// Validar una longitud geográfica.
+export const isValidLongitude = (
+  lng: number | null
+): lng is number => {
+  return (
+    lng !== null &&
+    Number.isFinite(lng) &&
+    lng >= -180 &&
+    lng <= 180
+  );
+};

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   IonButton,
   IonIcon,
@@ -5,6 +6,7 @@ import {
   IonText,
   IonSelect,
   IonSelectOption,
+  IonInput,
   useIonViewWillEnter,
 } from "@ionic/react";
 
@@ -12,9 +14,19 @@ import {
   briefcaseOutline,
   locationOutline,
   refreshOutline,
+  locateOutline,
 } from "ionicons/icons";
 
 import { useJobs } from "../../Hooks/useJobs";
+import {
+  useLocation,
+  type Coordinates,
+} from "../../Hooks/useLocation";
+
+import {
+  isValidLatitude,
+  isValidLongitude,
+} from "../../Helpers/distance";
 import {
   JOB_AREAS,
   modalidadLabel,
@@ -34,9 +46,76 @@ const AvailableJobs = () => {
   loadAvailableJobs,
   loadMoreJobs,
 } = useJobs();
+
+const {
+  getLocation,
+  loading: locating,
+  error: locationError,
+} = useLocation();
+
+const [studentLocation, setStudentLocation] =
+  useState<Coordinates | null>(null);
+
+const [manualLocation, setManualLocation] =
+  useState(false);
+
+const [manualLat, setManualLat] =
+  useState<number | null>(null);
+
+const [manualLng, setManualLng] =
+  useState<number | null>(null);
+
+const [manualError, setManualError] =
+  useState("");
+
 useIonViewWillEnter(() => {
   void restoreJobFilters();
 });
+
+// Obtener la ubicación actual del estudiante.
+const handleGetLocation = async () => {
+  setManualError("");
+
+  const coordinates = await getLocation();
+
+  if (!coordinates) return;
+
+  setStudentLocation(coordinates);
+  setManualLat(coordinates.lat);
+  setManualLng(coordinates.lng);
+  setManualLocation(false);
+};
+
+// Confirmar las coordenadas introducidas manualmente.
+const handleManualLocation = () => {
+  setManualError("");
+
+  if (!isValidLatitude(manualLat)) {
+    setManualError("Ingresa una latitud válida.");
+    return;
+  }
+
+  if (!isValidLongitude(manualLng)) {
+    setManualError("Ingresa una longitud válida.");
+    return;
+  }
+
+  setStudentLocation({
+    lat: manualLat,
+    lng: manualLng,
+  });
+
+  setManualLocation(false);
+};
+
+// Eliminar la ubicación registrada.
+const handleClearLocation = () => {
+  setStudentLocation(null);
+  setManualLat(null);
+  setManualLng(null);
+  setManualError("");
+  setManualLocation(false);
+};
 
   return (
     <>
@@ -44,7 +123,129 @@ useIonViewWillEnter(() => {
         <h2>Ofertas laborales</h2>
         <p>Encuentra tu próxima oportunidad laboral.</p>
       </div>
+      <div className={styles.studentLocation}>
+        <h3>Tu ubicación</h3>
 
+        <p className={styles.locationHelp}>
+          Activa tu ubicación para conocer la cercanía
+          de las ofertas laborales.
+        </p>
+
+        <IonButton
+          expand="block"
+          fill="outline"
+          className={styles.locationBtn}
+          disabled={locating}
+          onClick={handleGetLocation}
+        >
+          {locating ? (
+            <IonSpinner name="dots" />
+          ) : (
+            <>
+              <IonIcon icon={locateOutline} slot="start" />
+              Usar mi ubicación actual
+            </>
+          )}
+        </IonButton>
+
+        {locationError && (
+          <IonText color="danger">
+            <p>{locationError}</p>
+          </IonText>
+        )}
+
+        {studentLocation && (
+          <div className={styles.locationStatus}>
+            <strong>Ubicación registrada</strong>
+
+            <span>
+              {studentLocation.lat.toFixed(5)},{" "}
+              {studentLocation.lng.toFixed(5)}
+            </span>
+
+            <IonButton
+              fill="clear"
+              size="small"
+              disabled={locating}
+              onClick={handleClearLocation}
+            >
+              Quitar ubicación
+            </IonButton>
+          </div>
+        )}
+
+        <IonButton
+          expand="block"
+          fill="clear"
+          className={styles.manualLocationBtn}
+          disabled={locating}
+          onClick={() => {
+            setManualLocation(!manualLocation);
+            setManualError("");
+          }}
+        >
+          {manualLocation
+            ? "Ocultar coordenadas"
+            : "Ingresar coordenadas manualmente"}
+        </IonButton>
+
+        {manualLocation && (
+          <>
+            <div className={styles.locationCoordinates}>
+              <IonInput
+                label="Latitud"
+                labelPlacement="stacked"
+                className="custom-input"
+                type="number"
+                step="any"
+                placeholder="3.4516"
+                value={manualLat ?? ""}
+                disabled={locating}
+                onIonInput={(e) =>
+                  setManualLat(
+                    e.detail.value?.trim()
+                      ? Number(e.detail.value)
+                      : null
+                  )
+                }
+              />
+
+              <IonInput
+                label="Longitud"
+                labelPlacement="stacked"
+                className="custom-input"
+                type="number"
+                step="any"
+                placeholder="-76.5320"
+                value={manualLng ?? ""}
+                disabled={locating}
+                onIonInput={(e) =>
+                  setManualLng(
+                    e.detail.value?.trim()
+                      ? Number(e.detail.value)
+                      : null
+                  )
+                }
+              />
+            </div>
+
+            {manualError && (
+              <IonText color="danger">
+                <p>{manualError}</p>
+              </IonText>
+            )}
+
+            <IonButton
+              expand="block"
+              className={styles.confirmLocationBtn}
+              disabled={locating}
+              onClick={handleManualLocation}
+            >
+              Confirmar ubicación
+            </IonButton>
+          </>
+        )}
+      </div>
         <div className={styles.filters}>
         <h3>Filtrar vacantes</h3>
 

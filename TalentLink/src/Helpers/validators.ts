@@ -1,5 +1,9 @@
 export type Rol = "student" | "recruiter" | "admin";
 import { JOB_AREAS, type JobInput } from "./jobs";
+import {
+  isValidLatitude,
+  isValidLongitude,
+} from "./distance";
 
 export interface RegisterInput {
   nombre: string;
@@ -74,21 +78,11 @@ export const validateJob = (
   const hasLocation = data.lat !== null || data.lng !== null;
 
   if (requiresLocation || hasLocation) {
-    if (
-      data.lat === null ||
-      !Number.isFinite(data.lat) ||
-      data.lat < -90 ||
-      data.lat > 90
-    ) {
+    if (!isValidLatitude(data.lat)) {
       errors.lat = "Ingresa una latitud válida.";
     }
 
-    if (
-      data.lng === null ||
-      !Number.isFinite(data.lng) ||
-      data.lng < -180 ||
-      data.lng > 180
-    ) {
+    if (!isValidLongitude(data.lng)) {
       errors.lng = "Ingresa una longitud válida.";
     }
   }
