@@ -39,6 +39,7 @@ const Jobs = () => {
   const {
     myJobs,
     loading,
+    refreshError,
     loadMyJobs,
     addJob,
     editJob,
@@ -57,12 +58,7 @@ const Jobs = () => {
 
   const refreshJobs = async () => {
     setError("");
-
-    try {
-      await loadMyJobs();
-    } catch {
-      setError("No se pudieron cargar las vacantes.");
-    }
+    await loadMyJobs();
   };
 
   useIonViewWillEnter(() => {
@@ -156,12 +152,13 @@ const Jobs = () => {
                   Publicar vacante
                 </IonButton>
 
-                {error && (
+                {(error || refreshError) && (
                   <IonText color="danger">
-                    <p>{error}</p>
+                    <p>{error || refreshError}</p>
                     <IonButton
                       fill="clear"
                       size="small"
+                      disabled={loading || deleting}
                       onClick={refreshJobs}
                     >
                       Actualizar listado
@@ -173,7 +170,7 @@ const Jobs = () => {
                   <div className={styles.loading}>
                     <IonSpinner name="crescent" />
                   </div>
-                ) : myJobs.length === 0 && !error ? (
+                ) : myJobs.length === 0 && !error && !refreshError ? (
                   <div className={styles.empty}>
                     <IonIcon icon={briefcaseOutline} />
                     <h3>Aún no tienes vacantes</h3>

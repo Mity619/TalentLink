@@ -13,6 +13,7 @@ import { useAuth } from "../Hooks/useAuth";
 interface JobContextValue {
   myJobs: Job[];
   loading: boolean;
+  refreshError: string;
   loadMyJobs: () => Promise<void>;
   addJob: (data: JobInput) => Promise<void>;
   editJob: (jobId: string, data: JobInput) => Promise<void>;
@@ -26,22 +27,29 @@ export const JobProvider = ({ children }: { children: ReactNode }) => {
 
   const [myJobs, setMyJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshError, setRefreshError] = useState("");
 
   const loadMyJobs = async (): Promise<void> => {
+    setRefreshError("");
+
     if (!user) {
-      setMyJobs([]);
-      return;
+        setMyJobs([]);
+        return;
     }
 
     setLoading(true);
 
     try {
-      const jobs = await getJobsByAuthor(user.uid);
-      setMyJobs(jobs);
+        const jobs = await getJobsByAuthor(user.uid);
+        setMyJobs(jobs);
+    } catch {
+        setRefreshError(
+        "No se pudo actualizar el listado de vacantes."
+        );
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+};
 
   const addJob = async (data: JobInput): Promise<void> => {
     if (!user) {
@@ -70,6 +78,7 @@ export const JobProvider = ({ children }: { children: ReactNode }) => {
       value={{
         myJobs,
         loading,
+        refreshError,
         loadMyJobs,
         addJob,
         editJob,
