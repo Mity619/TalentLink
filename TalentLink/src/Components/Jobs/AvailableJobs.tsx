@@ -10,6 +10,9 @@ import {
   IonAlert,
   IonToast,
   useIonViewWillEnter,
+  IonSegment,
+  IonSegmentButton,
+  IonLabel,
 } from "@ionic/react";
 
 import {
@@ -23,6 +26,8 @@ import {
   bookmark,
   bookmarkOutline,
 } from "ionicons/icons";
+
+import { getSavedJobDetails } from "../../Helpers/savedJobService";
 
 import { useJobs } from "../../Hooks/useJobs";
 import { useSavedJobs } from "../../Hooks/useSavedJobs";
@@ -76,6 +81,7 @@ const {
 } = useApplications();
 
 const {
+  savedJobIds,
   loadingSavedJobs,
   savedJobsError,
   savedJobsReady,
@@ -135,6 +141,28 @@ const [nearbyRefresh, setNearbyRefresh] =
 const [loadedNearbyKey, setLoadedNearbyKey] =
   useState<string | null>(null);
 
+
+// Estados del listado de vacantes guardadas.
+const [onlySaved, setOnlySaved] =
+  useState(false);
+
+const [savedJobDetails, setSavedJobDetails] =
+  useState<Job[]>([]);
+
+const [loadingSavedDetails, setLoadingSavedDetails] =
+  useState(false);
+
+const [savedDetailsError, setSavedDetailsError] =
+  useState("");
+
+const [savedDetailsRefresh, setSavedDetailsRefresh] =
+  useState(0);
+
+const [loadedSavedKey, setLoadedSavedKey] =
+  useState<string | null>(null);
+
+const savedDetailsKey = JSON.stringify(savedJobIds);
+
 // Estados de postulación.
 const [jobToApply, setJobToApply] =
   useState<Job | null>(null);
@@ -152,15 +180,20 @@ const nearbyQueryKey = JSON.stringify([
   filters.modalidad ?? "",
 ]);
 
-const isLoadingJobs =
-  loadingAvailable ||
-  (isNearbyMode &&
-    (loadingNearby ||
-      loadedNearbyKey !== nearbyQueryKey));
+const isLoadingJobs = onlySaved
+  ? loadingSavedJobs ||
+    loadingSavedDetails ||
+    loadedSavedKey !== savedDetailsKey
+  : loadingAvailable ||
+    (isNearbyMode &&
+      (loadingNearby ||
+        loadedNearbyKey !== nearbyQueryKey));
 
-const jobsError = isNearbyMode
-  ? nearbyError
-  : availableError;
+const jobsError = onlySaved
+  ? savedDetailsError
+  : isNearbyMode
+    ? nearbyError
+    : availableError;
 
 useIonViewWillEnter(() => {
   void restoreJobFilters();
@@ -242,6 +275,60 @@ useEffect(() => {
   nearbyRefresh,
 ]);
 
+useEffect(() => {
+  if (!onlySaved || !canSave) {
+    setLoadingSavedDetails(false);
+    setSavedDetailsError("");
+    return;
+  }
+
+  let cancelled = false;
+
+  const loadDetails = async () => {
+    setLoadingSavedDetails(true);
+    setSavedDetailsError("");
+    setLoadedSavedKey(null);
+
+    try {
+      const jobs = await getSavedJobDetails(
+        savedJobIds
+      );
+
+      if (cancelled) return;
+
+      setSavedJobDetails(jobs);
+    } catch (error) {
+      if (cancelled) return;
+
+      console.error(
+        "Error al consultar vacantes guardadas:",
+        error
+      );
+
+      setSavedDetailsError(
+        "No se pudieron cargar las vacantes guardadas."
+      );
+    } finally {
+      if (!cancelled) {
+        setLoadedSavedKey(savedDetailsKey);
+        setLoadingSavedDetails(false);
+      }
+    }
+  };
+
+  void loadDetails();
+
+  return () => {
+    cancelled = true;
+  };
+}, [
+  onlySaved,
+  canSave,
+  savedJobIds,
+  savedDetailsKey,
+  savedDetailsRefresh,
+]);
+
 // Obtener la ubicación actual del estudiante.
 const handleGetLocation = async () => {
   setManualError("");
@@ -291,11 +378,15 @@ const handleClearLocation = () => {
   clearLocationError();
 };
 
-const sourceJobs = isNearbyMode
-  ? loadedNearbyKey === nearbyQueryKey
-    ? nearbyCandidates
+const sourceJobs = onlySaved
+  ? loadedSavedKey === savedDetailsKey
+    ? savedJobDetails.filter((job) => isSaved(job.id))
     : []
-  : availableJobs;
+  : isNearbyMode
+    ? loadedNearbyKey === nearbyQueryKey
+      ? nearbyCandidates
+      : []
+    : availableJobs;
 
 const jobsWithDistance = sourceJobs.map((job) => ({
   ...job,
@@ -308,7 +399,9 @@ const jobsWithDistance = sourceJobs.map((job) => ({
 }));
 
 const filteredJobs =
-  isNearbyMode && maxDistance !== null
+  !onlySaved &&
+  isNearbyMode &&
+  maxDistance !== null
     ? jobsWithDistance.filter(
         (job) =>
           job.distance !== null &&
@@ -316,19 +409,31 @@ const filteredJobs =
       )
     : jobsWithDistance;
 
-const visibleJobs = isNearbyMode
-  ? filteredJobs.slice(0, nearbyVisibleCount)
-  : filteredJobs;
+const visibleJobs = onlySaved
+  ? filteredJobs
+  : isNearbyMode
+    ? filteredJobs.slice(0, nearbyVisibleCount)
+    : filteredJobs;
 
-const hasMoreVisible = isNearbyMode
-  ? filteredJobs.length > nearbyVisibleCount
-  : hasMore;
+const hasMoreVisible = onlySaved
+  ? false
+  : isNearbyMode
+    ? filteredJobs.length > nearbyVisibleCount
+    : hasMore;
 
 const handleRefreshJobs = () => {
-  void loadAvailableJobs();
+  if (onlySaved) {
+    setSavedDetailsRefresh(
+      (current) => current + 1
+    );
+  } else {
+    void loadAvailableJobs();
 
-  if (isNearbyMode) {
-    setNearbyRefresh((current) => current + 1);
+    if (isNearbyMode) {
+      setNearbyRefresh(
+        (current) => current + 1
+      );
+    }
   }
 
   if (canApply) {
@@ -341,6 +446,7 @@ const handleRefreshJobs = () => {
 };
 
 const handleLoadMore = () => {
+  if (onlySaved) return;
   if (isNearbyMode) {
     setNearbyVisibleCount(
       (current) => current + NEARBY_PAGE_SIZE
@@ -354,6 +460,7 @@ const handleLoadMore = () => {
 const handleApplyClick = (job: Job) => {
   if (
     !canApply ||
+    job.estado !== "activa" ||
     loadingApplications ||
     applicationsError ||
     hasApplied(job.id) ||
@@ -436,6 +543,27 @@ const handleToggleSavedJob = async (jobId: string) => {
         <h2>Ofertas laborales</h2>
         <p>Encuentra tu próxima oportunidad laboral.</p>
       </div>
+
+      {canSave && (
+        <IonSegment
+          className={styles.jobsSegment}
+          value={onlySaved ? "saved" : "all"}
+          onIonChange={(e) => {
+            setOnlySaved(e.detail.value === "saved");
+          }}
+        >
+          <IonSegmentButton value="all">
+            <IonLabel>Todas</IonLabel>
+          </IonSegmentButton>
+
+          <IonSegmentButton value="saved">
+            <IonLabel>
+              Guardadas ({savedJobIds.length})
+            </IonLabel>
+          </IonSegmentButton>
+        </IonSegment>
+      )}
+
       <div className={styles.studentLocation}>
         <h3>Tu ubicación</h3>
 
@@ -559,6 +687,7 @@ const handleToggleSavedJob = async (jobId: string) => {
           </>
         )}
       </div>
+      {!onlySaved && (
         <div className={styles.filters}>
         <h3>Filtrar vacantes</h3>
 
@@ -673,10 +802,13 @@ const handleToggleSavedJob = async (jobId: string) => {
         )}
 
         </div>
+        )}
 
       <div className={styles.listToolbar}>
         <span>
-          {visibleJobs.length} vacantes mostradas
+          {onlySaved
+            ? `${visibleJobs.length} vacantes guardadas`
+            : `${visibleJobs.length} vacantes mostradas`}
         </span>
 
         <IonButton
@@ -745,23 +877,55 @@ const handleToggleSavedJob = async (jobId: string) => {
         !jobsError &&
         visibleJobs.length === 0 && (
           <div className={styles.empty}>
-            <IonIcon icon={briefcaseOutline} />
+            <IonIcon
+              icon={
+                onlySaved
+                  ? bookmarkOutline
+                  : briefcaseOutline
+              }
+            />
 
             <h3>
-              {isNearbyMode
-                ? "No hay vacantes cercanas"
-                : "No hay vacantes disponibles"}
+              {onlySaved
+                ? "No hay vacantes guardadas disponibles"
+                : isNearbyMode
+                  ? "No hay vacantes cercanas"
+                  : "No hay vacantes disponibles"}
             </h3>
 
             <p>
-              {isNearbyMode
-                ? "Prueba aumentando la distancia máxima o cambiando los filtros."
-                : filters.area || filters.modalidad
-                  ? "Prueba seleccionando otros filtros."
-                  : "Vuelve más tarde para consultar nuevas ofertas."}
+              {onlySaved
+                ? "Guarda las ofertas que te interesen para consultarlas posteriormente."
+                : isNearbyMode
+                  ? "Prueba aumentando la distancia máxima o cambiando los filtros."
+                  : filters.area || filters.modalidad
+                    ? "Prueba seleccionando otros filtros."
+                    : "Vuelve más tarde para consultar nuevas ofertas."}
             </p>
+
+            {onlySaved && (
+              <IonButton
+                fill="outline"
+                className={styles.exploreJobsBtn}
+                onClick={() => setOnlySaved(false)}
+              >
+                Explorar vacantes
+              </IonButton>
+            )}
           </div>
-        )}
+      )}
+
+      {onlySaved &&
+        !isLoadingJobs &&
+        !jobsError &&
+        !savedJobsError &&
+        savedJobsReady &&
+        savedJobIds.length > visibleJobs.length && (
+          <p className={styles.unavailableSavedJobs}>
+            Algunas vacantes guardadas ya no están
+            disponibles.
+          </p>
+      )}
 
       <div className={styles.jobsList}>
         {visibleJobs.map((job) => (
@@ -811,6 +975,12 @@ const handleToggleSavedJob = async (jobId: string) => {
             <div className={styles.tags}>
               <span>{job.area}</span>
               <span>{modalidadLabel[job.modalidad]}</span>
+
+              {job.estado === "cerrada" && (
+                <span className={styles.closedTag}>
+                  Cerrada
+                </span>
+              )}
             </div>
 
             <div className={styles.jobLocation}>
@@ -842,6 +1012,7 @@ const handleToggleSavedJob = async (jobId: string) => {
                   }
                   fill={hasApplied(job.id) ? "outline" : "solid"}
                   disabled={
+                    job.estado !== "activa" ||
                     loadingApplications ||
                     !!applicationsError ||
                     isApplying(job.id) ||
@@ -862,6 +1033,8 @@ const handleToggleSavedJob = async (jobId: string) => {
                       />
                       Ya postulado
                     </>
+                  ) : job.estado !== "activa" ? (
+                    "Vacante cerrada"
                   ) : loadingApplications ? (
                     "Verificando..."
                   ) : applicationsError ? (
@@ -899,7 +1072,8 @@ const handleToggleSavedJob = async (jobId: string) => {
         </IonButton>
       )}
 
-      {!hasMoreVisible &&
+      {!onlySaved &&
+        !hasMoreVisible &&
         !isLoadingJobs &&
         !jobsError &&
         visibleJobs.length > 0 && (

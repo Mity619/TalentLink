@@ -402,3 +402,44 @@
   --background: #e8f2ed;
 }
 
+.jobsSegment {
+  --background: #ffffff;
+
+  border-radius: 14px;
+  padding: 4px;
+  margin-bottom: 16px;
+
+  ion-segment-button {
+    --color: #005a4f;
+    --color-checked: #ffffff;
+    --indicator-color: #005a4f;
+    --indicator-height: 100%;
+    --border-radius: 10px;
+
+    min-height: 42px;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: none;
+  }
+}
+
+.exploreJobsBtn {
+  --color: #005a4f;
+  --border-color: #005a4f;
+  --border-radius: 20px;
+
+  margin-top: 12px;
+  text-transform: none;
+}
+
+.tags .closedTag {
+  background: #fbe9e7;
+  color: #a33a32;
+}
+
+.unavailableSavedJobs {
+  color: #777;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 8px 0 16px;
+}

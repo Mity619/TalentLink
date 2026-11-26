@@ -17,6 +17,8 @@ import {
   getSavedJobsStorageKey,
   type SavedJob,
 } from "./savedJobs";
+import { getJobById } from "./jobService";
+import type { Job } from "./jobs";
 
 const savedJobsCollection = collection(db, "savedJobs");
 
@@ -136,4 +138,27 @@ export const setLocalSavedJobIds = async (
     key: getSavedJobsStorageKey(uid),
     value: JSON.stringify(uniqueIds),
   });
+};
+
+// Recuperar los detalles de las vacantes guardadas.
+export const getSavedJobDetails = async (
+  jobIds: string[]
+): Promise<Job[]> => {
+  const uniqueIds = [...new Set(jobIds)];
+
+  if (uniqueIds.length === 0) {
+    return [];
+  }
+
+  const results = await Promise.all(
+    uniqueIds.map((jobId) => getJobById(jobId))
+  );
+
+  return results
+    .filter((job): job is Job => job !== null)
+    .sort(
+      (a, b) =>
+        (b.creadoEn?.toMillis() ?? 0) -
+        (a.creadoEn?.toMillis() ?? 0)
+    );
 };
