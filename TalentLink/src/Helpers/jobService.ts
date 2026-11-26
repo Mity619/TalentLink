@@ -5,17 +5,36 @@ import {
   doc,
   getDoc,
   getDocs,
+  orderBy,
   query,
   serverTimestamp,
   updateDoc,
   where,
+  limit,
+  startAfter,
+  type QueryConstraint,
+  type QueryDocumentSnapshot,
+  type DocumentData,
 } from "firebase/firestore";
 
 import { db } from "./firebase";
-import type { Job, JobInput } from "./jobs";
+import type { Job, JobInput, Modalidad } from "./jobs";
 import { validateJob } from "./validators";
 
 const jobsCollection = collection(db, "jobs");
+
+const JOBS_PAGE_SIZE = 10;
+
+export interface JobFilters {
+  area?: string;
+  modalidad?: Modalidad;
+}
+
+export interface JobsPage {
+  jobs: Job[];
+  lastDoc: QueryDocumentSnapshot<DocumentData> | null;
+  hasMore: boolean;
+}
 
 // Normalizar los datos de la vacante.
 const normalizeJob = (data: JobInput): JobInput => ({
@@ -86,6 +105,58 @@ export const getJobsByAuthor = async (
     ...jobDoc.data(),
     id: jobDoc.id,
   } as Job));
+};
+
+// Consultar vacantes activas con filtros y paginación.
+export const getActiveJobs = async (
+  filters: JobFilters = {},
+  lastDoc: QueryDocumentSnapshot<DocumentData> | null = null
+): Promise<JobsPage> => {
+  const constraints: QueryConstraint[] = [
+    where("estado", "==", "activa"),
+  ];
+
+  if (filters.area?.trim()) {
+    constraints.push(
+      where("area", "==", filters.area.trim())
+    );
+  }
+
+  if (filters.modalidad) {
+    constraints.push(
+      where("modalidad", "==", filters.modalidad)
+    );
+  }
+
+  constraints.push(orderBy("creadoEn", "desc"));
+
+  if (lastDoc) {
+    constraints.push(startAfter(lastDoc));
+  }
+
+  constraints.push(limit(JOBS_PAGE_SIZE + 1));
+
+  const jobsQuery = query(
+    jobsCollection,
+    ...constraints
+  );
+
+  const snapshot = await getDocs(jobsQuery);
+
+  const hasMore = snapshot.docs.length > JOBS_PAGE_SIZE;
+
+  const pageDocs = snapshot.docs.slice(0, JOBS_PAGE_SIZE);
+
+  const jobs = pageDocs.map((jobDoc) => ({
+    ...jobDoc.data(),
+    id: jobDoc.id,
+  } as Job));
+
+  return {
+    jobs,
+    lastDoc: pageDocs[pageDocs.length - 1] ?? null,
+    hasMore,
+  };
 };
 
 // Actualizar una vacante.
