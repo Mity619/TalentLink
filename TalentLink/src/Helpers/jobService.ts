@@ -107,11 +107,10 @@ export const getJobsByAuthor = async (
   } as Job));
 };
 
-// Consultar vacantes activas con filtros y paginación.
-export const getActiveJobs = async (
-  filters: JobFilters = {},
-  lastDoc: QueryDocumentSnapshot<DocumentData> | null = null
-): Promise<JobsPage> => {
+// Construir las condiciones comunes de búsqueda.
+const buildJobConstraints = (
+  filters: JobFilters
+): QueryConstraint[] => {
   const constraints: QueryConstraint[] = [
     where("estado", "==", "activa"),
   ];
@@ -129,6 +128,17 @@ export const getActiveJobs = async (
   }
 
   constraints.push(orderBy("creadoEn", "desc"));
+
+  return constraints;
+};
+
+
+// Consultar vacantes activas con filtros y paginación.
+export const getActiveJobs = async (
+  filters: JobFilters = {},
+  lastDoc: QueryDocumentSnapshot<DocumentData> | null = null
+): Promise<JobsPage> => {
+  const constraints = buildJobConstraints(filters);
 
   if (lastDoc) {
     constraints.push(startAfter(lastDoc));
@@ -157,6 +167,23 @@ export const getActiveJobs = async (
     lastDoc: pageDocs[pageDocs.length - 1] ?? null,
     hasMore,
   };
+};
+
+// Consultar todas las coincidencias para calcular cercanía.
+export const getAllActiveJobs = async (
+  filters: JobFilters = {}
+): Promise<Job[]> => {
+  const jobsQuery = query(
+    jobsCollection,
+    ...buildJobConstraints(filters)
+  );
+
+  const snapshot = await getDocs(jobsQuery);
+
+  return snapshot.docs.map((jobDoc) => ({
+    ...jobDoc.data(),
+    id: jobDoc.id,
+  } as Job));
 };
 
 // Actualizar una vacante.

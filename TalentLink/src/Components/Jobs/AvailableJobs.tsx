@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   IonButton,
   IonIcon,
@@ -24,6 +24,7 @@ import {
   type Coordinates,
 } from "../../Hooks/useLocation";
 
+import { getAllActiveJobs } from "../../Helpers/jobService";
 import {
   isValidLatitude,
   isValidLongitude,
@@ -34,9 +35,13 @@ import {
   JOB_AREAS,
   modalidadLabel,
   type Modalidad,
+  type Job,
 } from "../../Helpers/jobs";
 
 import styles from "../../Pages/Jobs/Jobs.module.scss";
+
+const DISTANCE_OPTIONS = [5, 10, 25, 50, 100];
+const NEARBY_PAGE_SIZE = 10;
 
 const AvailableJobs = () => {
   const {
@@ -71,9 +76,117 @@ const [manualLng, setManualLng] =
 const [manualError, setManualError] =
   useState("");
 
+// Estados del filtro de cercanía.
+const [maxDistance, setMaxDistance] =
+  useState<number | null>(null);
+
+const [nearbyCandidates, setNearbyCandidates] =
+  useState<Job[]>([]);
+
+const [loadingNearby, setLoadingNearby] =
+  useState(false);
+
+const [nearbyError, setNearbyError] =
+  useState("");
+
+const [nearbyVisibleCount, setNearbyVisibleCount] =
+  useState(NEARBY_PAGE_SIZE);
+
+const [nearbyRefresh, setNearbyRefresh] =
+  useState(0);
+
+const [loadedNearbyKey, setLoadedNearbyKey] =
+  useState<string | null>(null);
+
+const isNearbyMode =
+  studentLocation !== null && maxDistance !== null;
+
+const nearbyQueryKey = JSON.stringify([
+  filters.area ?? "",
+  filters.modalidad ?? "",
+]);
+
+const isLoadingJobs =
+  loadingAvailable ||
+  (isNearbyMode &&
+    (loadingNearby ||
+      loadedNearbyKey !== nearbyQueryKey));
+
+const jobsError = isNearbyMode
+  ? nearbyError
+  : availableError;
+
 useIonViewWillEnter(() => {
   void restoreJobFilters();
 });
+
+useEffect(() => {
+  if (!isNearbyMode) {
+    setNearbyCandidates([]);
+    setNearbyError("");
+    setLoadingNearby(false);
+    setLoadedNearbyKey(null);
+    return;
+  }
+
+  let cancelled = false;
+
+  const loadNearbyCandidates = async () => {
+    setLoadingNearby(true);
+    setNearbyError("");
+    setNearbyCandidates([]);
+    setLoadedNearbyKey(null);
+
+    try {
+      const jobs = await getAllActiveJobs({
+        area: filters.area,
+        modalidad: filters.modalidad,
+      });
+
+      if (cancelled) return;
+
+      setNearbyCandidates(jobs);
+    } catch (error) {
+      if (cancelled) return;
+
+      console.error(
+        "Error al consultar vacantes cercanas:",
+        error
+      );
+
+      setNearbyError(
+        "No se pudieron consultar las vacantes cercanas."
+      );
+    } finally {
+      if (!cancelled) {
+        setLoadedNearbyKey(nearbyQueryKey);
+        setLoadingNearby(false);
+      }
+    }
+  };
+
+  void loadNearbyCandidates();
+
+  return () => {
+    cancelled = true;
+  };
+}, [
+  isNearbyMode,
+  filters.area,
+  filters.modalidad,
+  nearbyQueryKey,
+  nearbyRefresh,
+]);
+
+useEffect(() => {
+  setNearbyVisibleCount(NEARBY_PAGE_SIZE);
+}, [
+  maxDistance,
+  studentLocation,
+  filters.area,
+  filters.modalidad,
+  nearbyRefresh,
+]);
 
 // Obtener la ubicación actual del estudiante.
 const handleGetLocation = async () => {
@@ -118,9 +231,17 @@ const handleClearLocation = () => {
   setManualLng(null);
   setManualError("");
   setManualLocation(false);
+
+  setMaxDistance(null);
 };
 
-const jobsWithDistance = availableJobs.map((job) => ({
+const sourceJobs = isNearbyMode
+  ? loadedNearbyKey === nearbyQueryKey
+    ? nearbyCandidates
+    : []
+  : availableJobs;
+
+const jobsWithDistance = sourceJobs.map((job) => ({
   ...job,
   distance: getDistanceOrNull(
     studentLocation?.lat ?? null,
@@ -129,6 +250,41 @@ const jobsWithDistance = availableJobs.map((job) => ({
     job.lng
   ),
 }));
+
+const filteredJobs =
+  isNearbyMode && maxDistance !== null
+    ? jobsWithDistance.filter(
+        (job) =>
+          job.distance !== null &&
+          job.distance <= maxDistance
+      )
+    : jobsWithDistance;
+
+const visibleJobs = isNearbyMode
+  ? filteredJobs.slice(0, nearbyVisibleCount)
+  : filteredJobs;
+
+const hasMoreVisible = isNearbyMode
+  ? filteredJobs.length > nearbyVisibleCount
+  : hasMore;
+
+const handleRefreshJobs = () => {
+  if (isNearbyMode) {
+    setNearbyRefresh((current) => current + 1);
+  } else {
+    void loadAvailableJobs();
+  }
+};
+
+const handleLoadMore = () => {
+  if (isNearbyMode) {
+    setNearbyVisibleCount(
+      (current) => current + NEARBY_PAGE_SIZE
+    );
+  } else {
+    void loadMoreJobs();
+  }
+};
 
   return (
     <>
@@ -315,30 +471,76 @@ const jobsWithDistance = availableJobs.map((job) => ({
             </IonSelect>
         </div>
 
-        {(filters.area || filters.modalidad) && (
-            <IonButton
+        <div className={styles.distanceFilter}>
+          <IonSelect
+            label="Distancia máxima"
+            labelPlacement="stacked"
+            interface="popover"
+            className="custom-input"
+            value={maxDistance ?? 0}
+            disabled={!studentLocation || locating}
+            onIonChange={(e) => {
+              const value = Number(e.detail.value);
+
+              setNearbyVisibleCount(NEARBY_PAGE_SIZE);
+              setMaxDistance(value === 0 ? null : value);
+            }}
+          >
+            <IonSelectOption value={0}>
+              Cualquier distancia
+            </IonSelectOption>
+
+            {DISTANCE_OPTIONS.map((distance) => (
+              <IonSelectOption key={distance} value={distance}>
+                Hasta {distance} km
+              </IonSelectOption>
+            ))}
+          </IonSelect>
+
+          {!studentLocation && (
+            <p className={styles.distanceHelp}>
+              Registra tu ubicación para filtrar por cercanía.
+            </p>
+          )}
+
+          {isNearbyMode && (
+            <p className={styles.distanceHelp}>
+              Se muestran ofertas con ubicación registrada
+              dentro de la distancia seleccionada.
+            </p>
+          )}
+        </div>
+
+        {(filters.area ||
+          filters.modalidad ||
+          maxDistance !== null) && (
+          <IonButton
             fill="clear"
             size="small"
             className={styles.clearFiltersBtn}
-            disabled={loadingAvailable}
-            onClick={() => void loadAvailableJobs({})}
-            >
+            disabled={isLoadingJobs}
+            onClick={() => {
+              setMaxDistance(null);
+              void loadAvailableJobs({});
+            }}
+          >
             Limpiar filtros
-            </IonButton>
+          </IonButton>
         )}
+
         </div>
 
       <div className={styles.listToolbar}>
         <span>
-          {availableJobs.length} vacantes mostradas
+          {visibleJobs.length} vacantes mostradas
         </span>
 
         <IonButton
           fill="clear"
           size="small"
           className={styles.refreshBtn}
-          disabled={loadingAvailable}
-          onClick={() => void loadAvailableJobs()}
+          disabled={isLoadingJobs}
+          onClick={handleRefreshJobs}
         >
           <IonIcon
             icon={refreshOutline}
@@ -348,16 +550,16 @@ const jobsWithDistance = availableJobs.map((job) => ({
         </IonButton>
       </div>
 
-      {availableError && (
+      {jobsError && (
         <IonText color="danger">
-          <p>{availableError}</p>
+          <p>{jobsError}</p>
 
-          {availableJobs.length === 0 && (
+          {visibleJobs.length === 0 && (
             <IonButton
               fill="clear"
               size="small"
-              disabled={loadingAvailable}
-              onClick={() => void loadAvailableJobs()}
+              disabled={isLoadingJobs}
+              onClick={handleRefreshJobs}
             >
               Reintentar
             </IonButton>
@@ -365,23 +567,30 @@ const jobsWithDistance = availableJobs.map((job) => ({
         </IonText>
       )}
 
-      {!loadingAvailable &&
-        !availableError &&
-        availableJobs.length === 0 && (
+      {!isLoadingJobs &&
+        !jobsError &&
+        visibleJobs.length === 0 && (
           <div className={styles.empty}>
             <IonIcon icon={briefcaseOutline} />
-            <h3>No hay vacantes disponibles</h3>
+
+            <h3>
+              {isNearbyMode
+                ? "No hay vacantes cercanas"
+                : "No hay vacantes disponibles"}
+            </h3>
 
             <p>
-            {filters.area || filters.modalidad
-                ? "Prueba seleccionando otros filtros."
-                : "Vuelve más tarde para consultar nuevas ofertas."}
+              {isNearbyMode
+                ? "Prueba aumentando la distancia máxima o cambiando los filtros."
+                : filters.area || filters.modalidad
+                  ? "Prueba seleccionando otros filtros."
+                  : "Vuelve más tarde para consultar nuevas ofertas."}
             </p>
           </div>
         )}
 
       <div className={styles.jobsList}>
-        {jobsWithDistance.map((job) => (  
+        {visibleJobs.map((job) => (
           <div key={job.id} className={styles.jobCard}>
             <div className={styles.cardHeader}>
               <h3>{job.titulo}</h3>
@@ -417,27 +626,27 @@ const jobsWithDistance = availableJobs.map((job) => ({
         ))}
       </div>
 
-      {loadingAvailable && (
+      {isLoadingJobs && (
         <div className={styles.loading}>
           <IonSpinner name="crescent" />
         </div>
       )}
 
-      {hasMore && !loadingAvailable && (
+      {hasMoreVisible && !isLoadingJobs && (
         <IonButton
           expand="block"
           fill="outline"
           className={styles.loadMoreBtn}
-          onClick={() => void loadMoreJobs()}
+          onClick={handleLoadMore}
         >
           Cargar más
         </IonButton>
       )}
 
-      {!hasMore &&
-        !loadingAvailable &&
-        !availableError &&
-        availableJobs.length > 0 && (
+      {!hasMoreVisible &&
+        !isLoadingJobs &&
+        !jobsError &&
+        visibleJobs.length > 0 && (
           <p className={styles.endMessage}>
             No hay más vacantes disponibles.
           </p>
