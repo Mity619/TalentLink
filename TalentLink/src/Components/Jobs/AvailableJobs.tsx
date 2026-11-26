@@ -20,9 +20,12 @@ import {
   navigateOutline,
   sendOutline,
   checkmarkCircleOutline,
+  bookmark,
+  bookmarkOutline,
 } from "ionicons/icons";
 
 import { useJobs } from "../../Hooks/useJobs";
+import { useSavedJobs } from "../../Hooks/useSavedJobs";
 import { useApplications } from "../../Hooks/useApplications";
 import { useAuth } from "../../Hooks/useAuth";
 import {
@@ -72,9 +75,21 @@ const {
   isApplying,
 } = useApplications();
 
+const {
+  loadingSavedJobs,
+  savedJobsError,
+  savedJobsReady,
+  loadSavedJobs,
+  toggleSavedJob,
+  isSaved,
+  isSaving,
+} = useSavedJobs();
+
 const canApply =
   profile?.activo === true &&
   profile.rol === "student";
+
+const canSave = canApply;
 
 const {
   getLocation,
@@ -153,7 +168,11 @@ useIonViewWillEnter(() => {
   if (canApply) {
     void loadApplications();
   }
-}, [canApply]);
+
+  if (canSave) {
+    void loadSavedJobs();
+  }
+}, [canApply, canSave]);
 
 useEffect(() => {
   if (!isNearbyMode) {
@@ -315,6 +334,10 @@ const handleRefreshJobs = () => {
   if (canApply) {
     void loadApplications();
   }
+
+  if (canSave) {
+    void loadSavedJobs();
+  }
 };
 
 const handleLoadMore = () => {
@@ -368,6 +391,40 @@ const handleConfirmApplication = async (jobId: string) => {
 
     setToast({
       message,
+      color: "danger",
+    });
+  }
+};
+
+// Guardar o quitar una vacante de favoritos.
+const handleToggleSavedJob = async (jobId: string) => {
+  if (
+    !canSave ||
+    !savedJobsReady ||
+    loadingSavedJobs ||
+    isSaving(jobId)
+  ) {
+    return;
+  }
+
+  try {
+    const saved = await toggleSavedJob(jobId);
+
+    setToast({
+      message: saved
+        ? "Vacante guardada correctamente."
+        : "Vacante eliminada de guardadas.",
+      color: "success",
+    });
+  } catch (error) {
+    console.error(
+      "Error al modificar la vacante guardada:",
+      error
+    );
+
+    setToast({
+      message:
+        "No se pudo modificar la vacante guardada. Intenta nuevamente.",
       color: "danger",
     });
   }
@@ -637,6 +694,21 @@ const handleConfirmApplication = async (jobId: string) => {
         </IonButton>
       </div>
 
+      {canSave && savedJobsError && (
+        <IonText color="danger">
+          <p>{savedJobsError}</p>
+
+          <IonButton
+            fill="clear"
+            size="small"
+            disabled={loadingSavedJobs}
+            onClick={() => void loadSavedJobs()}
+          >
+            Reintentar sincronización de guardadas
+          </IonButton>
+        </IonText>
+      )}
+
       {canApply && applicationsError && (
         <IonText color="danger">
           <p>{applicationsError}</p>
@@ -696,6 +768,40 @@ const handleConfirmApplication = async (jobId: string) => {
           <div key={job.id} className={styles.jobCard}>
             <div className={styles.cardHeader}>
               <h3>{job.titulo}</h3>
+
+              {canSave && (
+                <IonButton
+                  fill="clear"
+                  className={`${styles.bookmarkBtn} ${
+                    isSaved(job.id) ? styles.bookmarkActive : ""
+                  }`}
+                  disabled={
+                    !savedJobsReady ||
+                    loadingSavedJobs ||
+                    isSaving(job.id)
+                  }
+                  aria-label={
+                    isSaved(job.id)
+                      ? "Quitar vacante de guardadas"
+                      : "Guardar vacante"
+                  }
+                  aria-pressed={isSaved(job.id)}
+                  onClick={() => void handleToggleSavedJob(job.id)}
+                >
+                  {isSaving(job.id) ? (
+                    <IonSpinner name="crescent" />
+                  ) : (
+                    <IonIcon
+                      slot="icon-only"
+                      icon={
+                        isSaved(job.id)
+                          ? bookmark
+                          : bookmarkOutline
+                      }
+                    />
+                  )}
+                </IonButton>
+              )}
             </div>
 
             <p className={styles.company}>
