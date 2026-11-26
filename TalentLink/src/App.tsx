@@ -3,6 +3,7 @@ import { IonReactRouter } from "@ionic/react-router";
 import { Redirect, Route } from "react-router-dom";
 import { AuthProvider } from "./Context/AuthContext";
 import { JobProvider } from "./Context/JobContext";
+import { ApplicationProvider } from "./Context/ApplicationContext";
 import { useAuth } from "./Hooks/useAuth";
 
 // Páginas Públicas
@@ -34,7 +35,9 @@ const Shell = () => {
         render={() =>
           user ? (
             <JobProvider key={user.uid}>
-              <Tabs />
+              <ApplicationProvider>
+                <Tabs />
+              </ApplicationProvider>
             </JobProvider>
           ) : (
             <Redirect to="/login" />
