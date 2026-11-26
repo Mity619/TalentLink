@@ -66,3 +66,23 @@ export const isValidLongitude = (
     lng <= 180
   );
 };
+
+// Calcular la distancia únicamente si las coordenadas son válidas.
+export const getDistanceOrNull = (
+  lat1: number | null,
+  lng1: number | null,
+  lat2: number | null,
+  lng2: number | null
+): number | null => {
+  if (
+    !isValidLatitude(lat1) ||
+    !isValidLongitude(lng1) ||
+    !isValidLatitude(lat2) ||
+    !isValidLongitude(lng2)
+  ) {
+    return null;
+  }
+
+  return calculateDistance(lat1, lng1, lat2, lng2);
+};
+

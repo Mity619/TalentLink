@@ -304,3 +304,31 @@
   text-transform: none;
 }
 
+.jobLocation {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+
+  .city {
+    margin: 0;
+  }
+}
+
+.distance {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #e8f2ed;
+  color: #005a4f;
+  border-radius: 12px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-weight: 600;
+
+  ion-icon {
+    font-size: 14px;
+  }
+}
+

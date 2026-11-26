@@ -15,6 +15,7 @@ import {
   locationOutline,
   refreshOutline,
   locateOutline,
+  navigateOutline,
 } from "ionicons/icons";
 
 import { useJobs } from "../../Hooks/useJobs";
@@ -26,6 +27,8 @@ import {
 import {
   isValidLatitude,
   isValidLongitude,
+  getDistanceOrNull,
+  formatDistance,
 } from "../../Helpers/distance";
 import {
   JOB_AREAS,
@@ -116,6 +119,16 @@ const handleClearLocation = () => {
   setManualError("");
   setManualLocation(false);
 };
+
+const jobsWithDistance = availableJobs.map((job) => ({
+  ...job,
+  distance: getDistanceOrNull(
+    studentLocation?.lat ?? null,
+    studentLocation?.lng ?? null,
+    job.lat,
+    job.lng
+  ),
+}));
 
   return (
     <>
@@ -368,7 +381,7 @@ const handleClearLocation = () => {
         )}
 
       <div className={styles.jobsList}>
-        {availableJobs.map((job) => (
+        {jobsWithDistance.map((job) => (  
           <div key={job.id} className={styles.jobCard}>
             <div className={styles.cardHeader}>
               <h3>{job.titulo}</h3>
@@ -383,10 +396,19 @@ const handleClearLocation = () => {
               <span>{modalidadLabel[job.modalidad]}</span>
             </div>
 
-            <p className={styles.city}>
-              <IonIcon icon={locationOutline} />
-              {job.ciudad}
-            </p>
+            <div className={styles.jobLocation}>
+              <p className={styles.city}>
+                <IonIcon icon={locationOutline} />
+                {job.ciudad}
+              </p>
+
+              {job.distance !== null && (
+                <span className={styles.distance}>
+                  <IonIcon icon={navigateOutline} />
+                  A {formatDistance(job.distance)}
+                </span>
+              )}
+            </div>
 
             <p className={styles.description}>
               {job.descripcion}
