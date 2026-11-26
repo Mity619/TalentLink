@@ -1,9 +1,10 @@
-
 import {
   IonButton,
   IonIcon,
   IonSpinner,
   IonText,
+  IonSelect,
+  IonSelectOption,
   useIonViewWillEnter,
 } from "@ionic/react";
 
@@ -14,23 +15,28 @@ import {
 } from "ionicons/icons";
 
 import { useJobs } from "../../Hooks/useJobs";
-import { modalidadLabel } from "../../Helpers/jobs";
+import {
+  JOB_AREAS,
+  modalidadLabel,
+  type Modalidad,
+} from "../../Helpers/jobs";
 
 import styles from "../../Pages/Jobs/Jobs.module.scss";
 
 const AvailableJobs = () => {
   const {
-    availableJobs,
-    loadingAvailable,
-    availableError,
-    hasMore,
-    loadAvailableJobs,
-    loadMoreJobs,
-  } = useJobs();
-
-  useIonViewWillEnter(() => {
-    void loadAvailableJobs();
-  });
+  availableJobs,
+  filters,
+  loadingAvailable,
+  availableError,
+  hasMore,
+  restoreJobFilters,
+  loadAvailableJobs,
+  loadMoreJobs,
+} = useJobs();
+useIonViewWillEnter(() => {
+  void restoreJobFilters();
+});
 
   return (
     <>
@@ -38,6 +44,75 @@ const AvailableJobs = () => {
         <h2>Ofertas laborales</h2>
         <p>Encuentra tu próxima oportunidad laboral.</p>
       </div>
+
+        <div className={styles.filters}>
+        <h3>Filtrar vacantes</h3>
+
+        <div className={styles.filterFields}>
+            <IonSelect
+            label="Área profesional"
+            labelPlacement="stacked"
+            interface="popover"
+            className="custom-input"
+            value={filters.area ?? ""}
+            disabled={loadingAvailable}
+            onIonChange={(e) =>
+                void loadAvailableJobs({
+                ...filters,
+                area: e.detail.value || undefined,
+                })
+            }
+            >
+            <IonSelectOption value="">
+                Todas las áreas
+            </IonSelectOption>
+
+            {JOB_AREAS.map((area) => (
+                <IonSelectOption key={area} value={area}>
+                {area}
+                </IonSelectOption>
+            ))}
+            </IonSelect>
+
+            <IonSelect
+            label="Modalidad"
+            labelPlacement="stacked"
+            interface="popover"
+            className="custom-input"
+            value={filters.modalidad ?? ""}
+            disabled={loadingAvailable}
+            onIonChange={(e) =>
+                void loadAvailableJobs({
+                ...filters,
+                modalidad: (e.detail.value || undefined) as
+                    Modalidad | undefined,
+                })
+            }
+            >
+            <IonSelectOption value="">
+                Todas las modalidades
+            </IonSelectOption>
+
+            {Object.entries(modalidadLabel).map(([value, label]) => (
+                <IonSelectOption key={value} value={value}>
+                {label}
+                </IonSelectOption>
+            ))}
+            </IonSelect>
+        </div>
+
+        {(filters.area || filters.modalidad) && (
+            <IonButton
+            fill="clear"
+            size="small"
+            className={styles.clearFiltersBtn}
+            disabled={loadingAvailable}
+            onClick={() => void loadAvailableJobs({})}
+            >
+            Limpiar filtros
+            </IonButton>
+        )}
+        </div>
 
       <div className={styles.listToolbar}>
         <span>
@@ -82,7 +157,12 @@ const AvailableJobs = () => {
           <div className={styles.empty}>
             <IonIcon icon={briefcaseOutline} />
             <h3>No hay vacantes disponibles</h3>
-            <p>Vuelve más tarde para consultar nuevas ofertas.</p>
+
+            <p>
+            {filters.area || filters.modalidad
+                ? "Prueba seleccionando otros filtros."
+                : "Vuelve más tarde para consultar nuevas ofertas."}
+            </p>
           </div>
         )}
 

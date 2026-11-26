@@ -4,8 +4,13 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+import { Preferences } from "@capacitor/preferences";
 
-import type { Job, JobInput } from "../Helpers/jobs";
+import {
+  JOB_AREAS,
+  type Job,
+  type JobInput,
+} from "../Helpers/jobs";
 import {
   createJob,
   getJobsByAuthor,
@@ -33,6 +38,7 @@ interface JobContextValue {
   loadingAvailable: boolean;
   availableError: string;
   hasMore: boolean;
+  restoreJobFilters: () => Promise<void>;
   loadAvailableJobs: (filters?: JobFilters) => Promise<void>;
   loadMoreJobs: () => Promise<void>;
 }
@@ -116,8 +122,23 @@ export const JobProvider = ({ children }: { children: ReactNode }) => {
     setAvailableError("");
     setLoadingAvailable(true);
 
+
     try {
-        const page = await getActiveJobs(newFilters);
+    if (user) {
+        try {
+        await Preferences.set({
+            key: `tl_job_filters_${user.uid}`,
+            value: JSON.stringify(newFilters),
+        });
+        } catch (error) {
+        console.warn("No se pudieron guardar los filtros:", error);
+        }
+    }
+
+    if (currentRequest !== requestId.current) return;
+
+    const page = await getActiveJobs(newFilters);
+
 
         if (currentRequest !== requestId.current) return;
 
@@ -137,6 +158,39 @@ export const JobProvider = ({ children }: { children: ReactNode }) => {
         setLoadingAvailable(false);
         }
     }
+    };
+
+    // Recuperar los últimos filtros utilizados por el usuario.
+    const restoreJobFilters = async (): Promise<void> => {
+    let savedFilters: JobFilters = {};
+
+    if (user) {
+        try {
+        const { value } = await Preferences.get({
+            key: `tl_job_filters_${user.uid}`,
+        });
+
+        if (value) {
+            const parsed = JSON.parse(value);
+
+            if (JOB_AREAS.some((area) => area === parsed?.area)) {
+            savedFilters.area = parsed.area;
+            }
+
+            if (
+            parsed?.modalidad === "presencial" ||
+            parsed?.modalidad === "remoto" ||
+            parsed?.modalidad === "hibrido"
+            ) {
+            savedFilters.modalidad = parsed.modalidad;
+            }
+        }
+        } catch (error) {
+        console.warn("No se pudieron recuperar los filtros:", error);
+        }
+    }
+
+    await loadAvailableJobs(savedFilters);
     };
 
     // Cargar la siguiente página de vacantes.
@@ -206,6 +260,7 @@ export const JobProvider = ({ children }: { children: ReactNode }) => {
         loadingAvailable,
         availableError,
         hasMore,
+        restoreJobFilters,
         loadAvailableJobs,
         loadMoreJobs,
     }}

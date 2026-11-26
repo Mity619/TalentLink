@@ -1,5 +1,5 @@
 export type Rol = "student" | "recruiter" | "admin";
-import type { JobInput } from "./jobs";
+import { JOB_AREAS, type JobInput } from "./jobs";
 
 export interface RegisterInput {
   nombre: string;
@@ -61,8 +61,8 @@ export const validateJob = (
   if (!data.empresa.trim())
     errors.empresa = "Ingresa el nombre de la empresa.";
 
-  if (!data.area.trim())
-    errors.area = "Ingresa el área de la vacante.";
+  if (!JOB_AREAS.some((area) => area === data.area))
+    errors.area = "Selecciona un área profesional válida.";
 
   if (!["presencial", "remoto", "hibrido"].includes(data.modalidad))
     errors.modalidad = "Selecciona una modalidad válida.";

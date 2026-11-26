@@ -14,6 +14,7 @@ import { locateOutline } from "ionicons/icons";
 import { useLocation } from "../../Hooks/useLocation";
 
 import {
+  JOB_AREAS,
   modalidadLabel,
   type JobInput,
   type Modalidad,
@@ -208,17 +209,25 @@ const JobForm = ({
         </IonText>
       )}
 
-      <IonInput
+      <IonSelect
         label="Área profesional"
         labelPlacement="stacked"
         className="custom-input"
-        placeholder="Ej. Tecnología"
+        placeholder="Selecciona un área"
+        interface="popover"
         value={form.area}
         disabled={busy}
-        onIonInput={(e) =>
-          setField("area", e.detail.value ?? "")
+        onIonChange={(e) =>
+            setField("area", e.detail.value)
         }
-      />
+      >
+        {JOB_AREAS.map((area) => (
+            <IonSelectOption key={area} value={area}>
+            {area}
+            </IonSelectOption>
+        ))}
+      </IonSelect>
+
       {errors.area && (
         <IonText color="danger">
           <p>{errors.area}</p>

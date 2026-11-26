@@ -28,3 +28,17 @@ export const modalidadLabel: Record<Modalidad, string> = {
   remoto: "Remoto",
   hibrido: "Híbrido",
 };
+
+export const JOB_AREAS = [
+  "Tecnología",
+  "Administración",
+  "Ingeniería",
+  "Finanzas",
+  "Marketing y ventas",
+  "Diseño",
+  "Educación",
+  "Salud",
+  "Servicio al cliente",
+  "Logística",
+  "Otros",
+] as const;
