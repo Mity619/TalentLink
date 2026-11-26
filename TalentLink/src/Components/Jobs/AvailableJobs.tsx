@@ -361,6 +361,7 @@ const handleConfirmApplication = async (jobId: string) => {
         "La vacante ya no existe.",
         "Esta vacante ya no está disponible.",
         "No tienes permisos para postularte.",
+        "Ya hay una postulación en proceso para esta vacante.",
       ].includes(error.message)
         ? error.message
         : "No se pudo registrar la postulación. Intenta nuevamente.";

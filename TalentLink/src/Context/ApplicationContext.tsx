@@ -140,7 +140,9 @@ export const ApplicationProvider = ({
     }
 
     if (pendingJobIds.current.has(jobId)) {
-      return;
+    throw new Error(
+        "Ya hay una postulación en proceso para esta vacante."
+    );
     }
 
     pendingJobIds.current.add(jobId);
