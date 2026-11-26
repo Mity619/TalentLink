@@ -7,6 +7,8 @@ import {
   IonSelect,
   IonSelectOption,
   IonInput,
+  IonAlert,
+  IonToast,
   useIonViewWillEnter,
 } from "@ionic/react";
 
@@ -16,9 +18,13 @@ import {
   refreshOutline,
   locateOutline,
   navigateOutline,
+  sendOutline,
+  checkmarkCircleOutline,
 } from "ionicons/icons";
 
 import { useJobs } from "../../Hooks/useJobs";
+import { useApplications } from "../../Hooks/useApplications";
+import { useAuth } from "../../Hooks/useAuth";
 import {
   useLocation,
   type Coordinates,
@@ -54,6 +60,21 @@ const AvailableJobs = () => {
   loadAvailableJobs,
   loadMoreJobs,
 } = useJobs();
+
+const { profile } = useAuth();
+
+const {
+  loadingApplications,
+  applicationsError,
+  loadApplications,
+  apply,
+  hasApplied,
+  isApplying,
+} = useApplications();
+
+const canApply =
+  profile?.activo === true &&
+  profile.rol === "student";
 
 const {
   getLocation,
@@ -99,6 +120,15 @@ const [nearbyRefresh, setNearbyRefresh] =
 const [loadedNearbyKey, setLoadedNearbyKey] =
   useState<string | null>(null);
 
+// Estados de postulación.
+const [jobToApply, setJobToApply] =
+  useState<Job | null>(null);
+
+const [toast, setToast] = useState<{
+  message: string;
+  color: "success" | "danger";
+} | null>(null);
+
 const isNearbyMode =
   studentLocation !== null && maxDistance !== null;
 
@@ -119,7 +149,11 @@ const jobsError = isNearbyMode
 
 useIonViewWillEnter(() => {
   void restoreJobFilters();
-});
+
+  if (canApply) {
+    void loadApplications();
+  }
+}, [canApply]);
 
 useEffect(() => {
   if (!isNearbyMode) {
@@ -277,6 +311,10 @@ const handleRefreshJobs = () => {
   if (isNearbyMode) {
     setNearbyRefresh((current) => current + 1);
   }
+
+  if (canApply) {
+    void loadApplications();
+  }
 };
 
 const handleLoadMore = () => {
@@ -286,6 +324,51 @@ const handleLoadMore = () => {
     );
   } else {
     void loadMoreJobs();
+  }
+};
+
+// Solicitar confirmación antes de postularse.
+const handleApplyClick = (job: Job) => {
+  if (
+    !canApply ||
+    loadingApplications ||
+    applicationsError ||
+    hasApplied(job.id) ||
+    isApplying(job.id)
+  ) {
+    return;
+  }
+
+  setJobToApply(job);
+};
+
+// Confirmar y registrar la postulación.
+const handleConfirmApplication = async (jobId: string) => {
+  try {
+    await apply(jobId);
+
+    setToast({
+      message: "Postulación enviada correctamente.",
+      color: "success",
+    });
+  } catch (error) {
+    console.error("Error al registrar postulación:", error);
+
+    const message =
+      error instanceof Error &&
+      [
+        "Ya te has postulado a esta vacante.",
+        "La vacante ya no existe.",
+        "Esta vacante ya no está disponible.",
+        "No tienes permisos para postularte.",
+      ].includes(error.message)
+        ? error.message
+        : "No se pudo registrar la postulación. Intenta nuevamente.";
+
+    setToast({
+      message,
+      color: "danger",
+    });
   }
 };
 
@@ -553,6 +636,21 @@ const handleLoadMore = () => {
         </IonButton>
       </div>
 
+      {canApply && applicationsError && (
+        <IonText color="danger">
+          <p>{applicationsError}</p>
+
+          <IonButton
+            fill="clear"
+            size="small"
+            disabled={loadingApplications}
+            onClick={() => void loadApplications()}
+          >
+            Reintentar consulta de postulaciones
+          </IonButton>
+        </IonText>
+      )}
+
       {jobsError && (
         <IonText color="danger">
           <p>{jobsError}</p>
@@ -625,6 +723,54 @@ const handleLoadMore = () => {
             <p className={styles.description}>
               {job.descripcion}
             </p>
+
+            {canApply && (
+              <div className={styles.applicationActions}>
+                <IonButton
+                  expand="block"
+                  className={
+                    hasApplied(job.id)
+                      ? styles.appliedBtn
+                      : styles.applyBtn
+                  }
+                  fill={hasApplied(job.id) ? "outline" : "solid"}
+                  disabled={
+                    loadingApplications ||
+                    !!applicationsError ||
+                    isApplying(job.id) ||
+                    hasApplied(job.id)
+                  }
+                  onClick={() => handleApplyClick(job)}
+                >
+                  {isApplying(job.id) ? (
+                    <>
+                      <IonSpinner name="dots" slot="start" />
+                      Postulando...
+                    </>
+                  ) : hasApplied(job.id) ? (
+                    <>
+                      <IonIcon
+                        icon={checkmarkCircleOutline}
+                        slot="start"
+                      />
+                      Ya postulado
+                    </>
+                  ) : loadingApplications ? (
+                    "Verificando..."
+                  ) : applicationsError ? (
+                    "Postulación no disponible"
+                  ) : (
+                    <>
+                      <IonIcon
+                        icon={sendOutline}
+                        slot="start"
+                      />
+                      Postularme
+                    </>
+                  )}
+                </IonButton>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -654,6 +800,36 @@ const handleLoadMore = () => {
             No hay más vacantes disponibles.
           </p>
         )}
+
+        <IonAlert
+          isOpen={jobToApply !== null}
+          header="Confirmar postulación"
+          message="¿Deseas enviar tu postulación a esta vacante?"
+          onDidDismiss={() => setJobToApply(null)}
+          buttons={[
+            {
+              text: "Cancelar",
+              role: "cancel",
+            },
+            {
+              text: "Postularme",
+              handler: () => {
+                if (jobToApply) {
+                  void handleConfirmApplication(jobToApply.id);
+                }
+              },
+            },
+          ]}
+        />
+
+        <IonToast
+          isOpen={toast !== null}
+          message={toast?.message ?? ""}
+          color={toast?.color ?? "success"}
+          duration={3000}
+          position="bottom"
+          onDidDismiss={() => setToast(null)}
+        />
     </>
   );
 };
