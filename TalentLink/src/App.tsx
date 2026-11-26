@@ -4,6 +4,7 @@ import { Redirect, Route } from "react-router-dom";
 import { AuthProvider } from "./Context/AuthContext";
 import { JobProvider } from "./Context/JobContext";
 import { ApplicationProvider } from "./Context/ApplicationContext";
+import { SavedJobProvider } from "./Context/SavedJobContext";
 import { useAuth } from "./Hooks/useAuth";
 
 // Páginas Públicas
@@ -36,7 +37,9 @@ const Shell = () => {
           user ? (
             <JobProvider key={user.uid}>
               <ApplicationProvider>
-                <Tabs />
+                <SavedJobProvider>
+                  <Tabs />
+                </SavedJobProvider>
               </ApplicationProvider>
             </JobProvider>
           ) : (
