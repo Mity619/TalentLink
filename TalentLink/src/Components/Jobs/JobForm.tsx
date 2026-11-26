@@ -63,6 +63,7 @@ const JobForm = ({
     getLocation,
     loading: locating,
     error: locationError,
+    clearError: clearLocationError,
   } = useLocation();
 
   const hasLocation =
@@ -114,6 +115,7 @@ const JobForm = ({
         lat: undefined,
         lng: undefined,
     }));
+    clearLocationError();
     };
 
   const handleSubmit = async (e: FormEvent) => {
@@ -336,7 +338,10 @@ const JobForm = ({
             type="button"
             className={styles.manualBtn}
             disabled={busy || locating}
-            onClick={() => setManualLocation(!manualLocation)}
+            onClick={() => {
+              setManualLocation(!manualLocation);
+              clearLocationError();
+            }}
         >
             {manualLocation
             ? "Ocultar coordenadas"

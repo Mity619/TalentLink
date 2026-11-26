@@ -47,9 +47,14 @@ export const useLocation = () => {
     }
   };
 
+  const clearError = () => {
+  setError("");
+  };
+
   return {
     getLocation,
     loading,
     error,
+    clearError,
   };
 };

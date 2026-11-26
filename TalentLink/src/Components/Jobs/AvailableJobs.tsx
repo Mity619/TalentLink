@@ -59,6 +59,7 @@ const {
   getLocation,
   loading: locating,
   error: locationError,
+  clearError: clearLocationError,
 } = useLocation();
 
 const [studentLocation, setStudentLocation] =
@@ -221,6 +222,7 @@ const handleManualLocation = () => {
     lng: manualLng,
   });
 
+  clearLocationError();
   setManualLocation(false);
 };
 
@@ -231,8 +233,9 @@ const handleClearLocation = () => {
   setManualLng(null);
   setManualError("");
   setManualLocation(false);
-
   setMaxDistance(null);
+
+  clearLocationError();
 };
 
 const sourceJobs = isNearbyMode
@@ -269,10 +272,10 @@ const hasMoreVisible = isNearbyMode
   : hasMore;
 
 const handleRefreshJobs = () => {
+  void loadAvailableJobs();
+
   if (isNearbyMode) {
     setNearbyRefresh((current) => current + 1);
-  } else {
-    void loadAvailableJobs();
   }
 };
 
