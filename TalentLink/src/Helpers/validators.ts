@@ -1,4 +1,5 @@
 export type Rol = "student" | "recruiter" | "admin";
+import type { JobInput } from "./jobs";
 
 export interface RegisterInput {
   nombre: string;
@@ -44,4 +45,36 @@ export const roleLabel: Record<Rol, string> = {
   student: "Estudiante",
   recruiter: "Reclutador",
   admin: "Administrador",
+};
+
+export const validateJob = (
+  data: JobInput
+): FieldErrors<JobInput> => {
+  const errors: FieldErrors<JobInput> = {};
+
+  if (!data.titulo.trim())
+    errors.titulo = "Ingresa el título de la vacante.";
+
+  if (!data.descripcion.trim())
+    errors.descripcion = "Ingresa una descripción.";
+
+  if (!data.empresa.trim())
+    errors.empresa = "Ingresa el nombre de la empresa.";
+
+  if (!data.area.trim())
+    errors.area = "Ingresa el área de la vacante.";
+
+  if (!["presencial", "remoto", "hibrido"].includes(data.modalidad))
+    errors.modalidad = "Selecciona una modalidad válida.";
+
+  if (!data.ciudad.trim())
+    errors.ciudad = "Ingresa la ciudad.";
+
+  if (!Number.isFinite(data.lat) || data.lat < -90 || data.lat > 90)
+    errors.lat = "Ingresa una latitud válida.";
+
+  if (!Number.isFinite(data.lng) || data.lng < -180 || data.lng > 180)
+    errors.lng = "Ingresa una longitud válida.";
+
+  return errors;
 };
