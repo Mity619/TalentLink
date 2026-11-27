@@ -1,4 +1,9 @@
 export type Rol = "student" | "recruiter" | "admin";
+import { JOB_AREAS, type JobInput } from "./jobs";
+import {
+  isValidLatitude,
+  isValidLongitude,
+} from "./distance";
 
 export interface RegisterInput {
   nombre: string;
@@ -44,4 +49,43 @@ export const roleLabel: Record<Rol, string> = {
   student: "Estudiante",
   recruiter: "Reclutador",
   admin: "Administrador",
+};
+
+export const validateJob = (
+  data: JobInput
+): FieldErrors<JobInput> => {
+  const errors: FieldErrors<JobInput> = {};
+
+  if (!data.titulo.trim())
+    errors.titulo = "Ingresa el título de la vacante.";
+
+  if (!data.descripcion.trim())
+    errors.descripcion = "Ingresa una descripción.";
+
+  if (!data.empresa.trim())
+    errors.empresa = "Ingresa el nombre de la empresa.";
+
+  if (!JOB_AREAS.some((area) => area === data.area))
+    errors.area = "Selecciona un área profesional válida.";
+
+  if (!["presencial", "remoto", "hibrido"].includes(data.modalidad))
+    errors.modalidad = "Selecciona una modalidad válida.";
+
+  if (!data.ciudad.trim())
+    errors.ciudad = "Ingresa la ciudad.";
+
+  const requiresLocation = data.modalidad !== "remoto";
+  const hasLocation = data.lat !== null || data.lng !== null;
+
+  if (requiresLocation || hasLocation) {
+    if (!isValidLatitude(data.lat)) {
+      errors.lat = "Ingresa una latitud válida.";
+    }
+
+    if (!isValidLongitude(data.lng)) {
+      errors.lng = "Ingresa una longitud válida.";
+    }
+  }
+
+  return errors;
 };

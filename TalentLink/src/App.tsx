@@ -2,6 +2,9 @@ import { IonApp, IonLoading, IonRouterOutlet } from "@ionic/react";
 import { IonReactRouter } from "@ionic/react-router";
 import { Redirect, Route } from "react-router-dom";
 import { AuthProvider } from "./Context/AuthContext";
+import { JobProvider } from "./Context/JobContext";
+import { ApplicationProvider } from "./Context/ApplicationContext";
+import { SavedJobProvider } from "./Context/SavedJobContext";
 import { useAuth } from "./Hooks/useAuth";
 
 // Páginas Públicas
@@ -28,7 +31,22 @@ const Shell = () => {
       <Route exact path="/register" component={Register} />
       
       {/* La app principal (con las tabs) */}
-      <Route path="/app" render={() => user ? <Tabs /> : <Redirect to="/login" />} />
+      <Route
+        path="/app"
+        render={() =>
+          user ? (
+            <JobProvider key={user.uid}>
+              <ApplicationProvider>
+                <SavedJobProvider>
+                  <Tabs />
+                </SavedJobProvider>
+              </ApplicationProvider>
+            </JobProvider>
+          ) : (
+            <Redirect to="/login" />
+          )
+        }
+      />
       
       {/* Panel de Admin (sin tabs inferiores, se abre como página completa) */}
       <AdminRoute exact path="/admin/users" component={AdminUsers} />
