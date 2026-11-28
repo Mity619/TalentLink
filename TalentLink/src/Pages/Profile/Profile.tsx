@@ -3,7 +3,7 @@ import {
   IonAvatar, IonButton, IonContent, IonHeader, IonInput, IonPage, 
   IonSpinner, IonText, IonTitle, IonToolbar, IonIcon
 } from "@ionic/react";
-import { cameraOutline, documentTextOutline } from "ionicons/icons";
+import { cameraOutline, documentTextOutline, qrCodeOutline } from "ionicons/icons";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { doc, updateDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
@@ -11,6 +11,7 @@ import { Capacitor } from "@capacitor/core"; // Para el fallback en web
 import { db, storage } from "../../Helpers/firebase";
 import { useAuth } from "../../Hooks/useAuth";
 import { parseSkills, roleLabel, validateProfile } from "../../Helpers/validators";
+import ProfileQR from "../../Components/Profile/ProfileQR";
 import styles from "./Profile.module.scss";
 
 const Profile = () => {
@@ -21,6 +22,7 @@ const Profile = () => {
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [showQr, setShowQr] = useState(false);
 
   useEffect(() => {
     if (profile) {
@@ -160,6 +162,16 @@ const Profile = () => {
             <IonIcon icon={documentTextOutline} slot="start" />
             {profile.cvURL ? "Ver mi hoja de vida" : "Agregar hoja de vida"}
           </IonButton>
+        )}
+
+        {profile && (
+          <>
+            <IonButton expand="block" fill="outline" className={styles.qrBtn} onClick={() => setShowQr(true)}>
+              <IonIcon icon={qrCodeOutline} slot="start" />
+              Mi código QR
+            </IonButton>
+            <ProfileQR isOpen={showQr} profile={profile} onClose={() => setShowQr(false)} />
+          </>
         )}
       </IonContent>
     </IonPage>
