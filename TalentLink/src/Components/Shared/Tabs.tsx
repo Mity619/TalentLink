@@ -5,6 +5,7 @@ import Index from '../../Pages/Index/Index';
 import Profile from '../../Pages/Profile/Profile';
 import Jobs from '../../Pages/Jobs/Jobs'; 
 import Chats from '../../Pages/Chats/Chats';
+import ChatRoom from '../../Pages/Chats/ChatRoom';
 import './Tabs.css'
 
 const Tabs = () => {
@@ -14,6 +15,7 @@ const Tabs = () => {
         <Route exact path="/app/index" component={Index} />
         <Route exact path="/app/jobs" component={Jobs} /> 
         <Route exact path="/app/chats" component={Chats} />
+        <Route exact path="/app/chats/:chatId" component={ChatRoom} />
         <Route exact path="/app/profile" component={Profile} />
         <Route exact path="/app">
           <Redirect to="/app/index" />
