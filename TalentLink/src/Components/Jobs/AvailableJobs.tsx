@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useHistory } from "react-router-dom";
 import {
   IonButton,
   IonIcon,
@@ -25,9 +26,11 @@ import {
   checkmarkCircleOutline,
   bookmark,
   bookmarkOutline,
+  chatbubbleEllipsesOutline,
 } from "ionicons/icons";
 
 import { getSavedJobDetails } from "../../Helpers/savedJobService";
+import { openChat } from "../../Helpers/chatService";
 
 import { useJobs } from "../../Hooks/useJobs";
 import { useSavedJobs } from "../../Hooks/useSavedJobs";
@@ -69,7 +72,9 @@ const AvailableJobs = () => {
   loadMoreJobs,
 } = useJobs();
 
-const { profile } = useAuth();
+const { user, profile } = useAuth();
+const history = useHistory();
+const [openingChatId, setOpeningChatId] = useState<string | null>(null);
 
 const {
   loadingApplications,
@@ -516,6 +521,28 @@ const handleConfirmApplication = async (jobId: string) => {
       message,
       color: "danger",
     });
+  }
+};
+
+const handleContact = async (job: Job) => {
+  if (!user || !profile || openingChatId) return;
+  setOpeningChatId(job.id);
+  try {
+    const chatId = await openChat(
+      { uid: user.uid, nombre: profile.nombre },
+      job.autorUid,
+      job.empresa,
+      { id: job.id, titulo: job.titulo }
+    );
+    history.push(`/app/chats/${chatId}`);
+  } catch (error) {
+    console.error("Error al abrir el chat:", error);
+    setToast({
+      message: "No se pudo abrir el chat. Intenta nuevamente.",
+      color: "danger",
+    });
+  } finally {
+    setOpeningChatId(null);
   }
 };
 
@@ -1084,6 +1111,23 @@ const handleToggleSavedJob = async (jobId: string) => {
                         slot="start"
                       />
                       Postularme
+                    </>
+                  )}
+                </IonButton>
+
+                <IonButton
+                  expand="block"
+                  fill="outline"
+                  className={styles.contactBtn}
+                  disabled={!job.autorUid || openingChatId !== null}
+                  onClick={() => void handleContact(job)}
+                >
+                  {openingChatId === job.id ? (
+                    <IonSpinner name="dots" />
+                  ) : (
+                    <>
+                      <IonIcon icon={chatbubbleEllipsesOutline} slot="start" />
+                      Contactar al reclutador
                     </>
                   )}
                 </IonButton>
