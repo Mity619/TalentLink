@@ -1,0 +1,183 @@
+.adminPage {
+  --background: #fcf9f2;
+}
+
+.topToolbar {
+  --background: #fcf9f2;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  cursor: pointer;
+
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: bold;
+    color: #1a1a1a;
+  }
+}
+
+.backIcon {
+  font-size: 24px;
+  margin-right: 12px;
+  color: #1a1a1a;
+}
+
+.segmentToolbar {
+  --background: #fcf9f2;
+  padding: 0 16px 16px;
+}
+
+.segmentContainer {
+  background: #eae5d9;
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.customSegment {
+  --background: transparent;
+  
+  ion-segment-button {
+    --indicator-color: transparent;
+    --color: #666;
+    --color-checked: #1a1a1a;
+    --background-checked: #ffffff;
+    border-radius: 8px;
+    min-height: 36px;
+    font-weight: 500;
+  }
+}
+
+.searchToolbar {
+  --background: #fcf9f2;
+  padding: 0 16px 16px;
+}
+
+.customSearch {
+  --background: #ffffff;
+  --border-radius: 12px;
+  --box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  padding: 0;
+}
+
+.content {
+  --background: #fcf9f2;
+  --padding-start: 16px;
+  --padding-end: 16px;
+}
+
+.msg {
+  color: #666;
+  font-size: 14px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.userCard {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: #1a1a1a;
+  }
+  
+  p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #666;
+  }
+}
+
+.you {
+  font-weight: normal;
+  color: #999;
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  background: #d8f0e8;
+  color: #004d40;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.userActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 12px;
+}
+
+.roleSelect {
+  background: #fcf9f2;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 14px;
+  min-width: 130px;
+  --padding-start: 0;
+}
+
+.toggleWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #1a1a1a;
+
+  .customToggle {
+    --handle-background-checked: #ffffff;
+    --background-checked: #004d40;
+  }
+}
+
+.trashIcon {
+  font-size: 20px;
+  color: #d9534f;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  border: 1px dashed #ccc;
+  border-radius: 16px;
+  color: #999;
+  margin-top: 24px;
+}
+
+.emptyIcon {
+  font-size: 32px;
+  margin-bottom: 8px;
+  opacity: 0.5;
+}

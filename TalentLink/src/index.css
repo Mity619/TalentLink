@@ -1,0 +1,33 @@
+:root {
+  /* Paleta de colores basada en Lovable */
+  --ion-color-primary: #005a4f; /* Verde oscuro/Teal */
+  --ion-color-primary-rgb: 0, 90, 79;
+  --ion-color-primary-contrast: #ffffff;
+  
+  --ion-color-secondary: #f47b61; /* Naranja/Coral */
+  --ion-color-secondary-rgb: 244, 123, 97;
+  --ion-color-secondary-contrast: #ffffff;
+
+  --ion-background-color: #fcf9f2; /* Fondo crema de la app */
+  --ion-text-color: #1a1a1a;
+
+  --app-card-bg: #ffffff;
+  --app-border-radius: 24px;
+}
+
+/* Utilidades globales */
+.teal-gradient-bg {
+  background: linear-gradient(135deg, #004d40 0%, #00796b 100%);
+  color: white;
+}
+
+/* Estilo para los inputs con bordes suaves */
+.custom-input {
+  --background: #ffffff;
+  --border-radius: 12px;
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}

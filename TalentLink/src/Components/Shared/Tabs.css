@@ -1,0 +1,16 @@
+/* En tu index.css o theme/variables.css */
+ion-tab-bar {
+  --background: #ffffff;
+  border-top: 1px solid #f0f0f0;
+  padding: 4px 0;
+}
+
+ion-tab-button {
+  --color: #999;
+  --color-selected: #f47b61; /* El naranja de Lovable */
+  font-weight: 500;
+  
+  ion-icon {
+    font-size: 22px;
+  }
+}
