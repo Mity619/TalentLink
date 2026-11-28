@@ -3,7 +3,7 @@ import {
   IonAvatar, IonButton, IonContent, IonHeader, IonInput, IonPage, 
   IonSpinner, IonText, IonTitle, IonToolbar, IonIcon
 } from "@ionic/react";
-import { cameraOutline } from "ionicons/icons";
+import { cameraOutline, documentTextOutline } from "ionicons/icons";
 import { Camera, CameraResultType, CameraSource } from "@capacitor/camera";
 import { doc, updateDoc } from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
@@ -154,6 +154,13 @@ const Profile = () => {
             {busy ? <IonSpinner name="dots" /> : "Guardar"}
           </IonButton>
         </form>
+
+        {profile?.rol === "student" && (
+          <IonButton expand="block" fill="outline" className={styles.cvBtn} routerLink="/app/profile/cv">
+            <IonIcon icon={documentTextOutline} slot="start" />
+            {profile.cvURL ? "Ver mi hoja de vida" : "Agregar hoja de vida"}
+          </IonButton>
+        )}
       </IonContent>
     </IonPage>
   );

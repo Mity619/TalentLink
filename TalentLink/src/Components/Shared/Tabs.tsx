@@ -6,6 +6,7 @@ import Profile from '../../Pages/Profile/Profile';
 import Jobs from '../../Pages/Jobs/Jobs'; 
 import Chats from '../../Pages/Chats/Chats';
 import ChatRoom from '../../Pages/Chats/ChatRoom';
+import CV from '../../Pages/CV/CV';
 import './Tabs.css'
 
 const Tabs = () => {
@@ -17,6 +18,7 @@ const Tabs = () => {
         <Route exact path="/app/chats" component={Chats} />
         <Route exact path="/app/chats/:chatId" component={ChatRoom} />
         <Route exact path="/app/profile" component={Profile} />
+        <Route exact path="/app/profile/cv" component={CV} />
         <Route exact path="/app">
           <Redirect to="/app/index" />
         </Route>
