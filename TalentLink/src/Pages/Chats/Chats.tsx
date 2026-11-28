@@ -8,11 +8,13 @@ import {
   IonText,
   IonTitle,
   IonToolbar,
+  useIonViewWillEnter,
 } from "@ionic/react";
 import { useHistory } from "react-router-dom";
 import { chatbubblesOutline, personCircleOutline } from "ionicons/icons";
 import { useAuth } from "../../Hooks/useAuth";
 import { subscribeToChats } from "../../Helpers/chatService";
+import { getChatDrafts } from "../../Helpers/chatDraft";
 import { formatChatTime, getOtherUid, type Chat } from "../../Helpers/chats";
 import styles from "./Chats.module.scss";
 
@@ -22,6 +24,18 @@ const Chats = () => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+
+  const loadDrafts = () => {
+    if (!user || chats.length === 0) return;
+    getChatDrafts(user.uid, chats.map((c) => c.id))
+      .then(setDrafts)
+      .catch((err) => console.error("Error al cargar borradores:", err));
+  };
+
+  // La página sigue montada al volver de un chat, así que se recargan al entrar.
+  useIonViewWillEnter(loadDrafts, [user, chats]);
+  useEffect(loadDrafts, [user, chats]);
 
   useEffect(() => {
     if (!user) return;
@@ -94,7 +108,14 @@ const Chats = () => {
                       <span>{formatChatTime(chat.actualizadoEn)}</span>
                     </div>
                     {chat.jobTitulo && <span className={styles.jobTag}>{chat.jobTitulo}</span>}
-                    <p>{preview}</p>
+                    {drafts[chat.id] ? (
+                      <p>
+                        <span className={styles.draftLabel}>Borrador: </span>
+                        {drafts[chat.id]}
+                      </p>
+                    ) : (
+                      <p>{preview}</p>
+                    )}
                   </div>
                 </button>
               );

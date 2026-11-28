@@ -18,6 +18,7 @@ import { useParams } from "react-router-dom";
 import { send } from "ionicons/icons";
 import { useAuth } from "../../Hooks/useAuth";
 import { sendMessage, subscribeToChat, subscribeToMessages } from "../../Helpers/chatService";
+import { getChatDraft, saveChatDraft } from "../../Helpers/chatDraft";
 import {
   formatChatTime,
   getOtherUid,
@@ -38,6 +39,33 @@ const ChatRoom = () => {
   const [texto, setTexto] = useState("");
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState("");
+  const draftLoadedRef = useRef(false);
+
+  useEffect(() => {
+    if (!user || !chatId) return;
+    draftLoadedRef.current = false;
+    let active = true;
+    getChatDraft(user.uid, chatId)
+      .then((draft) => {
+        if (active) setTexto(draft);
+      })
+      .catch((err) => console.error("Error al cargar el borrador:", err))
+      .finally(() => {
+        if (active) draftLoadedRef.current = true;
+      });
+    return () => {
+      active = false;
+    };
+  }, [user, chatId]);
+
+  const handleTextoChange = (value: string) => {
+    setTexto(value);
+    if (user && draftLoadedRef.current) {
+      saveChatDraft(user.uid, chatId, value).catch((err) =>
+        console.error("Error al guardar el borrador:", err)
+      );
+    }
+  };
 
   useEffect(() => {
     if (!user || !chatId) return;
@@ -89,7 +117,7 @@ const ChatRoom = () => {
     setSendError("");
     try {
       await sendMessage(chatId, user.uid, texto);
-      setTexto("");
+      handleTextoChange("");
     } catch (err) {
       console.error("Error al enviar mensaje:", err);
       setSendError(
@@ -164,7 +192,7 @@ const ChatRoom = () => {
               maxlength={MAX_MESSAGE_LENGTH}
               value={texto}
               disabled={loading}
-              onIonInput={(e) => setTexto(e.detail.value ?? "")}
+              onIonInput={(e) => handleTextoChange(e.detail.value ?? "")}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
