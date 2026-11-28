@@ -1,0 +1,79 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ==========================================
+    // FUNCIONES DE AYUDA (Helpers)
+    // ==========================================
+
+    // Verifica si el usuario está autenticado
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Límite de tamaño: 5 MB (en bytes)
+    function isUnder5MB() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    // Límite de tamaño: 10 MB (para PDFs)
+    function isUnder10MB() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Valida que el archivo sea una imagen
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // Valida que el archivo sea un PDF
+    function isPDF() {
+      return request.resource.contentType == 'application/pdf';
+    }
+
+    // ==========================================
+    // RUTA: profiles/{fileName} (Fotos de perfil)
+    // ==========================================
+    match /profiles/{fileName} {
+      // Cualquier usuario autenticado puede leer las fotos de perfil
+      allow read: if isSignedIn();
+
+      // El dueño sube su foto como "suUID.jpg". Validamos el nombre y el tipo.
+      allow write: if isSignedIn()
+                   && (fileName == request.auth.uid || fileName == request.auth.uid + '.jpg')
+                   && isImage()
+                   && isUnder5MB();
+    }
+
+    // ==========================================
+    // RUTA: cvs/{fileName} (Hojas de vida)
+    // ==========================================
+    match /cvs/{fileName} {
+      // El dueño puede leer su CV.
+      allow read: if isSignedIn() && fileName == request.auth.uid + '.pdf';
+
+      // El dueño sube su CV como "suUID.pdf".
+      allow create, update: if isSignedIn()
+                   && fileName == request.auth.uid + '.pdf'
+                   && isPDF()
+                   && isUnder10MB();
+
+      // Al borrar no hay request.resource, así que no se valida tipo ni tamaño.
+      allow delete: if isSignedIn() && fileName == request.auth.uid + '.pdf';
+    }
+
+    // ==========================================
+    // RUTA: certificates/{uid}/{fileName} (Certificados)
+    // ==========================================
+    match /certificates/{uid}/{fileName} {
+      // El dueño puede leer sus certificados
+      allow read: if isSignedIn() && request.auth.uid == uid;
+
+      // El dueño sube certificados a su carpeta. Validamos tipo y tamaño.
+      allow write: if isSignedIn()
+                   && request.auth.uid == uid
+                   && (isPDF() || isImage())
+                   && isUnder10MB();
+    }
+  }
+}
